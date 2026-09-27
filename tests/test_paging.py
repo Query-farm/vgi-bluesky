@@ -130,3 +130,30 @@ class TestCacheControl:
     def test_nothing_is_cached_by_default(self, fake: _FakeApi) -> None:
         out, _ = _walk({"q": "x"}, first_page_only=True)
         assert out.cache == [None]
+
+
+class TestActorErrors:
+    def test_a_listing_of_an_unknown_actor_raises_the_clear_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from vgi_bluesky.bluesky_api import ActorNotFoundError, BlueskyError
+
+        def fail(*_a: Any, **_k: Any) -> Any:
+            raise BlueskyError(
+                400, "app.bsky.feed.getAuthorFeed", '{"error":"InvalidRequest","message":"Profile not found"}'
+            )
+
+        monkeypatch.setattr(paging.api, "page", fail)
+        monkeypatch.setattr(paging.api, "_get", lambda *_a, **_k: {"actors": []})
+        with pytest.raises(ActorNotFoundError, match="No Bluesky account 'nobody.test'") as info:
+            emit_page(
+                _Params(),  # type: ignore[arg-type]
+                PagedScanState(),
+                _Out(),  # type: ignore[arg-type]
+                method="app.bsky.feed.getAuthorFeed",
+                key="feed",
+                query={"actor": "nobody.test"},
+                flatten=_flatten,
+                actor="nobody.test",
+            )
+        assert info.value.__cause__ is None and info.value.__suppress_context__

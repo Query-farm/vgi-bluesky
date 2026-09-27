@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 
 import httpx
@@ -240,3 +241,65 @@ class TestHosts:
 
         api.trends(client=_client(handler))
         assert seen[0].startswith("https://appview.example/xrpc/app.bsky.unspecced.getTrends")
+
+
+class TestActorErrors:
+    """A wrong actor should read as "no such account", with a suggestion, not a raw XRPC error."""
+
+    NOT_FOUND = {"error": "InvalidRequest", "message": "Profile not found"}
+
+    @staticmethod
+    def _search(actors: list[dict]) -> httpx.Client:
+        def handler(request: httpx.Request) -> httpx.Response:
+            assert request.url.path.endswith("app.bsky.actor.searchActors")
+            return httpx.Response(200, json={"actors": actors})
+
+        return _client(handler)
+
+    def test_the_xrpc_error_is_parsed(self) -> None:
+        exc = BlueskyError(
+            400, "app.bsky.feed.getAuthorFeed", '{"error":"InvalidRequest","message":"Profile not found"}'
+        )
+        assert (exc.error, exc.message) == ("InvalidRequest", "Profile not found")
+        assert str(exc) == "Bluesky getAuthorFeed failed (HTTP 400): InvalidRequest: Profile not found"
+
+    def test_a_non_json_error_body_still_reads(self) -> None:
+        exc = BlueskyError(502, "app.bsky.feed.getPosts", "<html>bad gateway</html>")
+        assert exc.error == "" and "bad gateway" in str(exc)
+
+    def test_unknown_handle_suggests_real_accounts(self) -> None:
+        exc = BlueskyError(400, "app.bsky.feed.getAuthorFeed", json.dumps(self.NOT_FOUND))
+        client = self._search([{"handle": "medriscoll.com", "displayName": "Mike Driscoll"}])
+        clear = api.actor_error(exc, "medriscoll.bsky.social", client=client)
+        assert isinstance(clear, api.ActorNotFoundError)
+        assert str(clear).startswith(
+            "No Bluesky account 'medriscoll.bsky.social'. Did you mean 'medriscoll.com' (Mike Driscoll)?"
+        )
+
+    def test_the_actor_not_found_wording_is_recognised_too(self) -> None:
+        body = json.dumps({"error": "InvalidRequest", "message": "Actor not found: x.test"})
+        clear = api.actor_error(
+            BlueskyError(400, "app.bsky.graph.getFollowers", body), "x.test", client=self._search([])
+        )
+        assert isinstance(clear, api.ActorNotFoundError) and "Did you mean" not in str(clear)
+
+    def test_an_unknown_did_is_not_searched(self) -> None:
+        exc = BlueskyError(400, "app.bsky.feed.getAuthorFeed", json.dumps(self.NOT_FOUND))
+        client = _client(lambda request: pytest.fail("a DID has no name to search for"))
+        assert isinstance(api.actor_error(exc, "did:plc:nobody", client=client), api.ActorNotFoundError)
+
+    def test_a_malformed_actor_says_what_is_accepted(self) -> None:
+        body = json.dumps(
+            {"error": "InvalidRequest", "message": 'Invalid params: Invalid AT identifier (got "x y")'}
+        )
+        clear = api.actor_error(BlueskyError(400, "app.bsky.feed.getAuthorFeed", body), "x y")
+        assert isinstance(clear, api.InvalidActorError) and "'bsky.app'" in str(clear)
+
+    @pytest.mark.parametrize("status", [429, 500])
+    def test_other_failures_are_left_alone(self, status: int) -> None:
+        assert api.actor_error(BlueskyError(status, "m", json.dumps(self.NOT_FOUND)), "a.test") is None
+
+    def test_a_failed_suggestion_search_still_gives_the_clear_error(self) -> None:
+        exc = BlueskyError(400, "app.bsky.feed.getAuthorFeed", json.dumps(self.NOT_FOUND))
+        client = _client(lambda request: httpx.Response(400, json={"error": "InvalidRequest"}))
+        assert str(api.actor_error(exc, "a.test", client=client)).startswith("No Bluesky account 'a.test'.")

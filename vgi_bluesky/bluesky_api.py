@@ -20,6 +20,7 @@ from user SQL cannot traverse out of its position the way a path segment can.
 from __future__ import annotations
 
 import atexit
+import json
 import os
 import re
 import threading
@@ -197,12 +198,77 @@ atexit.register(reset_shared_client)
 
 
 class BlueskyError(RuntimeError):
-    """A non-2xx XRPC response, carrying the status, method and body."""
+    """A non-2xx XRPC response, carrying the status, method and Bluesky's own error.
+
+    XRPC errors are JSON — ``{"error": "InvalidRequest", "message": "Profile not
+    found"}`` — so the message is built from those two fields rather than from
+    the raw body, which is what a DuckDB user reads first.
+    """
 
     def __init__(self, status: int, method: str, body: str) -> None:
-        super().__init__(f"Bluesky XRPC {status} for {method}: {body[:400]}")
         self.status = status
         self.method = method
+        self.error, self.message = _xrpc_error(body)
+        short = method.rsplit(".", 1)[-1]
+        detail = f"{self.error}: {self.message}" if self.error else self.message
+        super().__init__(f"Bluesky {short} failed (HTTP {status}): {detail[:400]}")
+
+
+def _xrpc_error(body: str) -> tuple[str, str]:
+    """``(error, message)`` from an XRPC error body, falling back to the raw text."""
+    try:
+        payload = json.loads(body)
+    except ValueError:
+        return "", body.strip()
+    if not isinstance(payload, dict):
+        return "", body.strip()
+    return str(payload.get("error") or ""), str(payload.get("message") or body.strip())
+
+
+class ActorNotFoundError(ValueError):
+    """An actor argument named no Bluesky account."""
+
+
+class InvalidActorError(ValueError):
+    """An actor argument was not a handle, DID or profile URL at all."""
+
+
+#: How XRPC words "no such account": "Profile not found" (getAuthorFeed,
+#: getActorFeeds) and "Actor not found: <actor>" (getFollowers, getFollows).
+_NOT_FOUND = re.compile(r"^(Profile|Actor) not found")
+
+
+def actor_error(exc: BlueskyError, actor: str, *, client: httpx.Client | None = None) -> ValueError | None:
+    """A clear error for a failed call about ``actor``, or None if it was not the actor's fault.
+
+    An unknown handle is almost always a near-miss — ``medriscoll.bsky.social``
+    for ``medriscoll.com`` — so the account search is asked once, on this error
+    path only, for accounts matching the handle's first label, and the closest
+    few are suggested by handle and display name.
+    """
+    if exc.status != 400:
+        return None
+    if "Invalid AT identifier" in exc.message:
+        return InvalidActorError(
+            f"{actor!r} is not a Bluesky account identifier. Pass a handle such as 'bsky.app', "
+            "a DID such as 'did:plc:…', '@handle', or a https://bsky.app/profile/… URL."
+        )
+    if not _NOT_FOUND.match(exc.message):
+        return None
+    message = f"No Bluesky account {actor!r}."
+    if not actor.startswith("did:") and (term := actor.split(".")[0].strip()):
+        try:
+            found = _get("app.bsky.actor.searchActors", {"q": term, "limit": 3}, client=client)
+        except (BlueskyError, httpx.HTTPError):
+            found = {}
+        guesses = [
+            f"{a['handle']!r} ({a['displayName']})" if a.get("displayName") else repr(a["handle"])
+            for a in found.get("actors") or []
+            if isinstance(a, dict) and a.get("handle") and a.get("handle") != actor
+        ]
+        if guesses:
+            message += f" Did you mean {' or '.join(guesses)}?"
+    return ActorNotFoundError(f"{message} search_actors('…') finds accounts by name.")
 
 
 def _retry_after(response: httpx.Response) -> float | None:

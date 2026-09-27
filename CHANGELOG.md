@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Changed
+
+- A wrong actor now fails with a clear error instead of a raw XRPC one, in
+  `author_feed`, `followers`, `follows` and `actor_feeds`:
+  `ActorNotFoundError: No Bluesky account 'medriscoll.bsky.social'. Did you mean
+  'medriscoll.com' (Mike Driscoll)?` — the suggestion comes from one account
+  search, made only when the lookup has already failed. A malformed actor
+  raises `InvalidActorError` listing the accepted forms. Every other Bluesky
+  error now reads `Bluesky <method> failed (HTTP <status>): <error>: <message>`
+  rather than the raw JSON body.
+
 ### Documentation
 
 - README recipes: posts from an author (latest, last week, most-liked, media

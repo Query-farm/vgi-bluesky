@@ -286,6 +286,7 @@ class ActorFeedsFunction(TableFunctionGenerator[ActorFeedsArgs, PagedScanState])
             key="feeds",
             query={"actor": api.normalize_actor(params.args.actor)},
             flatten=lambda _payload, rows: [flatten_feed_generator(row) for row in rows],
+            actor=params.args.actor,
         )
 
 

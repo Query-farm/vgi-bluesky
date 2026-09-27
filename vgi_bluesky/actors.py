@@ -295,6 +295,7 @@ class FollowersFunction(TableFunctionGenerator[ActorArgs, PagedScanState]):
             key="followers",
             query={"actor": api.normalize_actor(params.args.actor)},
             flatten=_graph_flatten,
+            actor=params.args.actor,
         )
 
 
@@ -351,6 +352,7 @@ class FollowsFunction(TableFunctionGenerator[ActorArgs, PagedScanState]):
             key="follows",
             query={"actor": api.normalize_actor(params.args.actor)},
             flatten=_graph_flatten,
+            actor=params.args.actor,
         )
 
 

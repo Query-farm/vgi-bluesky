@@ -398,6 +398,7 @@ class AuthorFeedFunction(TableFunctionGenerator[AuthorFeedArgs, PagedScanState])
                 "includePins": "true" if params.args.include_pins else None,
             },
             flatten=feed_rows,
+            actor=params.args.actor,
         )
 
 

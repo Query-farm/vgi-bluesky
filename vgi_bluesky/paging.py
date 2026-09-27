@@ -87,6 +87,7 @@ def emit_page(
     base: str | None = None,
     opt_in_ttl: int = 0,
     first_page_only: bool = False,
+    actor: str | None = None,
 ) -> None:
     """Fetch one page into one batch, and record where to resume.
 
@@ -105,21 +106,31 @@ def emit_page(
             over a caller's guess.
         first_page_only: Stop after one page even when a cursor comes back —
             for an endpoint that refuses its own cursor to anonymous callers.
+        actor: The actor this listing is about, as the caller wrote it. When
+            Bluesky says there is no such account, the raw XRPC error becomes an
+            :class:`~vgi_bluesky.bluesky_api.ActorNotFoundError` naming it.
     """
     if state.done:
         out.finish()
         return
     frozen = _frozen_query(state, query)
     hint = CacheHint()
-    payload, rows, cursor = api.page(
-        method,
-        key,
-        frozen,
-        cursor=state.cursor or None,
-        base=base,
-        hint=hint,
-        page_limit=PAGE_LIMIT,
-    )
+    try:
+        payload, rows, cursor = api.page(
+            method,
+            key,
+            frozen,
+            cursor=state.cursor or None,
+            base=base,
+            hint=hint,
+            page_limit=PAGE_LIMIT,
+        )
+    except api.BlueskyError as exc:
+        # `from None`: the caller needs "no such account", not the XRPC error
+        # chained underneath it.
+        if actor is not None and (clear := api.actor_error(exc, actor)) is not None:
+            raise clear from None
+        raise
     state.cursor = cursor or ""
     state.done = cursor is None or first_page_only
     if hint.cacheable:

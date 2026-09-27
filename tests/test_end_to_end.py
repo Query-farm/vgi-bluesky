@@ -94,6 +94,22 @@ class TestScans:
         assert 0 < count <= 100
 
 
+class TestErrors:
+    def test_an_unknown_author_names_the_account_and_suggests_one(self, con: Any) -> None:
+        """The handle is wrong (the account is medriscoll.com); the error should say so."""
+        with pytest.raises(
+            Exception,
+            match=(
+                r"ActorNotFoundError: No Bluesky account 'medriscoll\.bsky\.social'\. "
+                r"Did you mean 'medriscoll\.com'"
+            ),
+        ):
+            con.execute(
+                "SELECT created_at, text FROM bluesky.main.author_feed('medriscoll.bsky.social', "
+                "filter => 'posts_no_replies') WHERE reason IS NULL"
+            ).fetchall()
+
+
 class TestLateral:
     def test_profile_under_lateral(self, con: Any) -> None:
         rows = con.execute(
