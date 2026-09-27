@@ -1,0 +1,53 @@
+name: Live
+
+# The tests and lint tiers that hit Bluesky's public API.
+#
+# Deliberately NOT on push. Bluesky rate-limits anonymous traffic per IP, so
+# two concurrent runs throttle each other into failures that say nothing about
+# the code. One scheduled run, never concurrent, is the honest cadence.
+
+on:
+  schedule:
+    - cron: "23 6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  # Never two of these at once, across branches — they share a rate limit.
+  group: bluesky-live
+  cancel-in-progress: false
+
+jobs:
+  live:
+    name: Live API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      - run: uv sync --no-sources
+      - name: Live tests (API layer)
+        run: uv run --no-sources pytest -q -m live -p no:randomly --ignore=tests/test_end_to_end.py
+
+      # SQL executed against a real ATTACH — the tier that exercises the
+      # contract the DuckDB extension holds the worker to.
+      - name: End-to-end SQL
+        run: uv run --no-sources pytest -q -m live -p no:randomly tests/test_end_to_end.py
+
+  behavioural:
+    name: vgi-lint (executes every example)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: live
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      - run: uv sync --no-sources
+      # Serial on purpose: every example is a real API call.
+      - name: vgi-lint (structural + behavioural)
+        run: >
+          uvx --no-sources --from vgi-lint-check==0.82.0 vgi-lint lint "uv run --no-sources bluesky_worker.py"
+          --execute-concurrency 1 --no-check-links --audit-waivers --fail-on error

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # pyproject deliberately carries no `[tool.uv.sources]`, so a fresh clone
+  # resolves from PyPI. This pins that shut: if a local path source is ever
+  # added, CI still proves the *published* dependencies are sufficient — the
+  # entry-point scripts carry their own PEP-723 headers.
+  UV_NO_SOURCES: "1"
+
+jobs:
+  check:
+    name: Lint, offline tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      - run: uv sync --no-sources --all-extras
+      - name: Ruff (lint)
+        run: uv run --no-sources ruff check .
+      - name: Ruff (format)
+        run: uv run --no-sources ruff format --check .
+      - name: Offline tests
+        run: uv run --no-sources pytest -q
+      - name: Entry points start without the dev checkouts
+        run: |
+          uv run --no-project bluesky_worker.py --help > /dev/null
+          uv run --no-project serve.py --help > /dev/null
+
+  catalog:
+    name: Catalog metadata (vgi-lint, structural)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      - run: uv sync --no-sources
+      # Structural tier only: no network, so this is safe to run on every push.
+      # The behavioural tier hits the live API, so it runs on a schedule — see live.yml.
+      - name: vgi-lint (structural)
+        run: >
+          uvx --no-sources --from vgi-lint-check==0.82.0 vgi-lint lint "uv run --no-sources bluesky_worker.py"
+          --no-execute --no-check-links --audit-waivers --fail-on warning

@@ -1,0 +1,20 @@
+vgi-bluesky
+Copyright (c) 2026 Query Farm LLC - https://query.farm
+
+This product is licensed under the MIT License. See LICENSE.
+
+------------------------------------------------------------------------------
+
+Bluesky content
+
+This software reads Bluesky's public AppView API. The posts, profiles and other
+content it returns belong to their authors and are served by Bluesky Social
+PBC; they are not covered by the MIT License above, and their use is subject
+to Bluesky's terms of service and developer guidelines:
+
+    https://bsky.social/about/support/tos
+    https://docs.bsky.app/docs/support/developer-guidelines
+
+Neither this software nor Query Farm LLC is affiliated with, endorsed by, or
+sponsored by Bluesky Social PBC. "Bluesky" is a trademark of its respective
+owner and is used here only to describe what this software connects to.

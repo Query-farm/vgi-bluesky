@@ -1,0 +1,83 @@
+[project]
+name = "vgi-bluesky"
+dynamic = ["version"]
+description = "A read-only VGI (Vector Gateway Interface) worker exposing Bluesky social data to DuckDB/SQL"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Query Farm", email = "hello@query.farm" }]
+keywords = ["vgi", "duckdb", "arrow", "bluesky", "atproto", "social", "sql"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Database",
+    "Topic :: Communications",
+    "Typing :: Typed",
+]
+requires-python = ">=3.13"
+dependencies = [
+    # `haybarn` is not optional: vgi-python binds a pushed-down WHERE clause with
+    # an in-process DuckDB engine, and without one every filtered scan fails at
+    # runtime with "No DuckDB-compatible engine is installed".
+    "vgi-python[http,haybarn]>=0.37.3",
+    "httpx>=0.28.1",
+    "websockets>=17.1",
+]
+
+[project.optional-dependencies]
+serve = ["vgi-python[http,haybarn,oauth]>=0.37.3", "vgi-rpc[sentry]>=0.47.2"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1",
+    # Pinned to a minor: the rule set is version-dependent, so an unpinned ruff
+    # means CI can fail on a commit that was clean locally.
+    "ruff>=0.16.9,<0.17",
+    # Drives a real ATTACH in tests/test_end_to_end.py. Haybarn is the DuckDB
+    # distribution the vgi extension is published for (and what vgi-lint uses);
+    # stock `duckdb` wheels have no matching vgi build. It ships only release
+    # candidates, so the specifier names one to let PEP 440 select them.
+    "haybarn>=1.5.5rc1,<1.6",
+    # DuckDB materializes TIMESTAMP WITH TIME ZONE through pytz; without it a
+    # scan that returns one fails at fetch time, not at bind.
+    "pytz>=2026.4",
+    # Reads vgi-agent-tests.yaml, the private graders, in tests/test_catalog.py.
+    "pyyaml>=6.0.3",
+]
+
+[project.urls]
+Homepage = "https://query.farm"
+Documentation = "https://query.farm/vgi/"
+Repository = "https://github.com/Query-farm/vgi-bluesky"
+Issues = "https://github.com/Query-farm/vgi-bluesky/issues"
+
+[project.scripts]
+vgi-bluesky = "vgi_bluesky.worker:main"
+vgi-bluesky-http = "vgi_bluesky.worker:main_http"
+
+[build-system]
+requires = ["hatchling>=1.32"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "vgi_bluesky/__init__.py"
+
+[tool.ruff]
+line-length = 110
+target-version = "py313"
+
+# Selected explicitly rather than left to the default set, which changes between
+# ruff releases, so CI and a developer's shell reach the same conclusion.
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Live tests hit the public Bluesky API; opt in with `pytest -m live`.
+addopts = "-m 'not live'"
+markers = ["live: hits the real Bluesky API over the network"]

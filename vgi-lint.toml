@@ -1,0 +1,21 @@
+# vgi-lint configuration for the Bluesky worker.
+#
+#   vgi-lint lint --audit-waivers
+#
+# re-runs the rules any waivers silence and fails if one has stopped buying
+# anything — a waiver that suppresses nothing hides the moment the rule starts
+# applying.
+
+location = "uv run bluesky_worker.py"
+select = ["ALL"]
+fail_on = "error"
+
+ignore = [
+  { code = "VGI311", kind = "tooling-bug", reason = """\
+The one parameterless scan here IS exposed as a table: all_trends backs \
+`trends`. The rule looks for a table whose name matches the function's, so it \
+cannot see the link. The names differ deliberately — a function and a table \
+cannot share one name in a schema, so the scan takes the `all_` prefix and the \
+table keeps the name consumers actually type.\
+""" },
+]

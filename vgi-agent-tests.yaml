@@ -1,0 +1,120 @@
+# Private graders for the agent-suitability suite.
+#
+# The catalog publishes only each task's {name, prompt} in vgi.agent_test_tasks;
+# the answers live here so an agent under test cannot read them out of the
+# catalog. vgi-lint finds this file next to vgi-lint.toml and merges it by name.
+
+tasks:
+  - name: whats_trending
+    reference_sql: SELECT rank, display_name FROM bluesky.main.trends ORDER BY rank LIMIT 5
+    success_criteria: Reads the trends table (or all_trends) in rank order.
+
+  - name: account_size
+    reference_sql: SELECT followers_count FROM bluesky.main.profile('bsky.app')
+    success_criteria: >-
+      Uses profile().followers_count rather than counting the rows of followers(),
+      which would page through millions of accounts.
+
+  - name: own_posts_only
+    reference_sql: >-
+      SELECT created_at, text FROM bluesky.main.author_feed('bsky.app')
+      WHERE reason IS NULL ORDER BY created_at DESC LIMIT 10
+    success_criteria: Uses author_feed() and excludes reposts with reason IS NULL.
+    unordered: true
+
+  - name: topic_search
+    reference_sql: SELECT author_handle, text, created_at FROM bluesky.main.search_posts('duckdb') LIMIT 25
+    success_criteria: Uses search_posts() with a DuckDB query.
+    unordered: true
+
+  - name: best_reply
+    reference_sql: >-
+      SELECT author_handle, text, like_count FROM bluesky.main.thread((
+      SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies')
+      WHERE reason IS NULL LIMIT 1)) WHERE depth > 0 ORDER BY like_count DESC LIMIT 1
+    success_criteria: Uses thread() and keeps only replies (depth > 0), rather than quotes() or search.
+
+  - name: commentary
+    reference_sql: >-
+      SELECT author_handle, text FROM bluesky.main.quotes('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') LIMIT 20
+    success_criteria: Uses quotes() for quote posts, not reposted_by() or thread().
+    unordered: true
+
+  - name: enrich_search_results
+    reference_sql: >-
+      SELECT p.handle, p.followers_count FROM (
+      SELECT did FROM bluesky.main.search_actors('duckdb') LIMIT 20) a,
+      LATERAL bluesky.main.profile(a.did) p ORDER BY p.followers_count DESC
+    success_criteria: >-
+      Searches with search_actors() and adds follower counts with profile(), since
+      search results carry no counts.
+    unordered: true
+
+  - name: read_discover
+    reference_sql: >-
+      SELECT author_handle, text FROM
+      bluesky.main.feed('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot') LIMIT 20
+    success_criteria: >-
+      Finds the Discover feed's URI (from actor_feeds('bsky.app') or popular_feeds()) and reads it
+      with feed(), passing the URI as a literal.
+    unordered: true
+
+  - name: find_a_feed
+    reference_sql: >-
+      SELECT display_name, like_count, uri FROM bluesky.main.popular_feeds(query => 'science') LIMIT 10
+    success_criteria: Searches feeds with popular_feeds(query => ...) rather than scanning feed contents.
+    unordered: true
+
+  - name: recent_followers
+    reference_sql: SELECT handle FROM bluesky.main.followers('bsky.app') LIMIT 10
+    success_criteria: Uses followers() with a LIMIT, relying on its most-recent-first order.
+    unordered: true
+
+  - name: who_they_follow
+    reference_sql: SELECT handle FROM bluesky.main.follows('bsky.app') LIMIT 20
+    success_criteria: Uses follows(), not followers() — the direction matters.
+    unordered: true
+
+  - name: who_liked_it
+    reference_sql: >-
+      SELECT handle, interacted_at FROM bluesky.main.likes('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') LIMIT 20
+    success_criteria: >-
+      Finds the pinned post (author_feed with include_pins, reason = 'pin') and passes its URI to
+      likes() as a literal; reports interacted_at as the time of each like.
+    unordered: true
+
+  - name: who_boosted_it
+    reference_sql: >-
+      SELECT handle FROM bluesky.main.reposted_by('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') LIMIT 20
+    success_criteria: Uses reposted_by() for reposts, not quotes().
+    unordered: true
+
+  - name: post_engagement
+    reference_sql: >-
+      SELECT like_count, repost_count, reply_count
+      FROM bluesky.main.post('https://bsky.app/profile/bsky.app/post/3mw2cdr44fc2a')
+    success_criteria: Passes the web URL straight to post() and reads its count columns.
+
+  - name: an_accounts_feeds
+    reference_sql: SELECT display_name, like_count FROM bluesky.main.actor_feeds('bsky.app')
+    success_criteria: Uses actor_feeds() for the account's own feeds rather than searching popular_feeds().
+    unordered: true
+
+  - name: trends_by_category
+    reference_sql: >-
+      SELECT category, sum(post_count) AS posts FROM bluesky.main.all_trends()
+      GROUP BY category ORDER BY posts DESC
+    check_sql: >-
+      SELECT (SELECT count(*) FROM bluesky.main.trends) = (SELECT count(*) FROM bluesky.main.all_trends())
+    success_criteria: Aggregates the trend list by category, through either the trends table or all_trends().
+    unordered: true
+
+  - name: live_languages
+    reference_sql: >-
+      SELECT lang, count(*) AS posts FROM (SELECT unnest(langs) AS lang FROM
+      bluesky.main.jetstream(collections => 'app.bsky.feed.post', seconds => 10))
+      GROUP BY lang ORDER BY posts DESC
+    success_criteria: >-
+      Samples the live firehose with jetstream() filtered to posts, rather than search_posts(),
+      and aggregates the langs column. Exact counts will differ run to run.
+    unordered: true
