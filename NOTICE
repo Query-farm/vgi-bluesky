@@ -17,4 +17,7 @@ to Bluesky's terms of service and developer guidelines:
 
 Neither this software nor Query Farm LLC is affiliated with, endorsed by, or
 sponsored by Bluesky Social PBC. "Bluesky" is a trademark of its respective
-owner and is used here only to describe what this software connects to.
+owner and is used here only to describe what this software connects to. The
+Bluesky butterfly in docs/bluesky-logo.svg is taken unmodified from Bluesky's
+social-app repository (https://github.com/bluesky-social/social-app) and is
+likewise used only to identify the service.
