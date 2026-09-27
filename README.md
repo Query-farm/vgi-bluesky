@@ -1,7 +1,7 @@
 <p align="center">
-  <a href="https://bsky.app"><img src="https://raw.githubusercontent.com/Query-farm/vgi-bluesky/main/docs/bluesky-logo.svg" alt="Bluesky logo" height="96"></a>
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://query.farm/vgi/"><img src="https://raw.githubusercontent.com/Query-farm/vgi-bluesky/main/docs/vgi-logo.png" alt="Vector Gateway Interface logo" height="96"></a>
+  <a href="https://query.farm/vgi/">
+    <img src="https://raw.githubusercontent.com/Query-farm/vgi-bluesky/main/docs/vgi-logo.png" alt="Vector Gateway Interface logo" width="320">
+  </a>
 </p>
 
 <h1 align="center">vgi-bluesky</h1>
@@ -21,8 +21,11 @@
 
 ---
 
-No credentials needed. Everything comes from Bluesky's public API and its
-Jetstream firehose, and the worker can't post, like, follow or change anything.
+<a href="https://bsky.app"><img align="right" src="https://raw.githubusercontent.com/Query-farm/vgi-bluesky/main/docs/bluesky-logo.svg" alt="Bluesky" width="72"></a>
+
+No credentials needed. Everything comes from [Bluesky](https://bsky.app)'s
+public API and its Jetstream firehose, and the worker can't post, like, follow
+or change anything.
 
 ```sql
 ATTACH 'bluesky' (TYPE vgi,
@@ -145,18 +148,22 @@ every `batch_events` events (default 1000) or `batch_ms` milliseconds (default
 1000), whichever comes first.
 
 > [!IMPORTANT]
-> **Streaming to a DuckDB client? Shrink its buffer first:**
+> **Streaming to a DuckDB client? Change two settings first:**
 >
 > ```sql
-> SET streaming_buffer_size = '1KB';
+> SET streaming_buffer_size = '1KB';        -- don't wait for ~1 MB of results
+> SET enable_caching_operators = false;     -- don't hold back small filtered chunks
 > SELECT * FROM bluesky.jetstream(seconds => 0, batch_ms => 500);
 > ```
 >
-> DuckDB holds back a streaming result until about 1 MB has built up. The
-> firehose's small rows take a long time to fill that: with the default, an
-> endless scan showed nothing for 90 seconds. With `1KB`, rows arrive every
-> second. Aggregates (`count(*)`, `GROUP BY`) don't need this, since their
-> result only exists once the scan ends.
+> DuckDB holds back a streaming result until about 1 MB has built up, which the
+> firehose's small rows take a long time to fill: with the default, an endless
+> scan showed nothing for 90 seconds. And a filter that keeps only a few rows
+> per batch, like a keyword match, produces small chunks that DuckDB caches until
+> it has 2048 rows or the scan ends, so a live topic listen showed nothing at all.
+> With both settings, rows arrive about once a second (a filtered listen takes a
+> few seconds longer to start). Queries that aggregate (`count(*)`, `GROUP BY`)
+> or that end on their own don't need either.
 
 **Filtering.** `collections` (comma-separated, wildcards like
 `'app.bsky.graph.*'` allowed) and `dids` filter at the source, as does
@@ -184,6 +191,109 @@ Chained calls neither skip nor repeat events. Use `cursor =>` rather than
 `WHERE time_us > …`, which spends one of `max_events` on the event you already
 have. Each Jetstream server keeps its own clock, so when polling across runs,
 set `BLUESKY_JETSTREAM_URL` to stay on one server.
+
+## Recipes
+
+### Posts from an author
+
+```sql
+-- Their latest posts, without replies or reposts
+SELECT created_at, text, like_count, post_url
+FROM bluesky.author_feed('bsky.app', filter => 'posts_no_replies')
+WHERE reason IS NULL
+LIMIT 20;
+
+-- The last week. author_feed runs newest first, so cap it and filter the result
+SELECT created_at, text, like_count
+FROM (SELECT * FROM bluesky.author_feed('jay.bsky.team') LIMIT 200)
+WHERE reason IS NULL AND created_at > now() - INTERVAL 7 DAY
+ORDER BY created_at DESC;
+
+-- Their most-liked recent posts
+SELECT text, like_count, repost_count, post_url
+FROM (SELECT * FROM bluesky.author_feed('jay.bsky.team', filter => 'posts_no_replies') LIMIT 300)
+WHERE reason IS NULL
+ORDER BY like_count DESC LIMIT 10;
+
+-- Only posts with images or video
+SELECT created_at, text, image_count, post_url
+FROM bluesky.author_feed('bsky.app', filter => 'posts_with_media')
+LIMIT 10;
+
+-- What they've said about a topic, via search
+SELECT created_at, text, post_url
+FROM bluesky.search_posts('duckdb', author => 'duckdb.org');
+
+-- Several authors at once: listings take literal arguments, so combine them
+SELECT author_handle, created_at, text
+FROM (SELECT * FROM bluesky.author_feed('bsky.app', filter => 'posts_no_replies') LIMIT 10)
+UNION ALL
+SELECT author_handle, created_at, text
+FROM (SELECT * FROM bluesky.author_feed('jay.bsky.team', filter => 'posts_no_replies') LIMIT 10)
+ORDER BY created_at DESC;
+```
+
+`reason IS NULL` drops reposts, which appear in an author's feed as the original
+author's post. `filter` also accepts `posts_with_replies` (the default),
+`posts_and_author_threads` and `posts_with_video`.
+
+To catch an author's new posts as they happen, use the firehose with their DID
+(from `profile()`). The firehose identifies accounts by DID, not handle:
+
+```sql
+SELECT event_time, text, uri
+FROM bluesky.jetstream(collections => 'app.bsky.feed.post',
+                       dids => 'did:plc:z72i7hdynmk6r22z27h6tvur',   -- bsky.app
+                       seconds => 300);
+```
+
+### Listening to the firehose for a topic
+
+Jetstream filters by record type and account, not by content. So listen to all
+posts and match the topic in the `WHERE` clause: the whole network's posts flow
+through the worker, and DuckDB keeps the matches.
+
+```sql
+-- Posts mentioning a keyword, over the next minute
+SELECT event_time, did, text, uri
+FROM bluesky.jetstream(collections => 'app.bsky.feed.post', seconds => 60)
+WHERE operation = 'create' AND text ILIKE '%duckdb%';
+
+-- Posts with a hashtag (no '#')
+SELECT event_time, did, text
+FROM bluesky.jetstream(collections => 'app.bsky.feed.post', seconds => 60)
+WHERE list_contains(hashtags, 'art');
+
+-- Look back instead of waiting: the last 10 minutes, replayed in ~10 seconds
+SELECT event_time, did, text
+FROM bluesky.jetstream(collections => 'app.bsky.feed.post', seconds => 120)
+WHERE event_time >= now() - INTERVAL 10 MINUTE AND event_time < now()
+  AND text ILIKE '%duckdb%';
+
+-- How much a topic is being discussed, minute by minute
+SELECT date_trunc('minute', event_time) AS minute, count(*) AS posts
+FROM bluesky.jetstream(collections => 'app.bsky.feed.post', seconds => 120)
+WHERE event_time >= now() - INTERVAL 10 MINUTE AND event_time < now()
+  AND text ILIKE '%election%'
+GROUP BY minute ORDER BY minute;
+```
+
+To keep listening until you stop the query, use `seconds => 0` with the two
+settings above:
+
+```sql
+SET streaming_buffer_size = '1KB';
+SET enable_caching_operators = false;
+
+SELECT event_time, did, text, uri
+FROM bluesky.jetstream(collections => 'app.bsky.feed.post', seconds => 0)
+WHERE text ILIKE '%duckdb%';
+```
+
+A niche topic can go minutes without a post, so an empty live window isn't
+unusual. Replay a longer window to see whether it's being discussed at all. The
+replay's `seconds` must cover the time to read it: 10 minutes of posts took
+about 10 seconds.
 
 ## Development
 

@@ -200,3 +200,36 @@ class TestJetstream:
         assert len({round(a) for a in arrivals}) >= 2, "rows arrived in one lump, not as a stream"
         # The connection is still usable after walking away from an endless scan.
         assert con.execute("SELECT count(*) > 0 FROM bluesky.main.trends").fetchall() == [(True,)]
+
+    def test_a_filtered_endless_listen_streams_too(self, con: Any) -> None:
+        """A topic listen: a selective filter over an endless scan must still stream.
+
+        FILTER is one of DuckDB's caching operators — it holds chunks of 64 rows or
+        fewer until it has a full vector — so without `enable_caching_operators =
+        false` a keyword match delivers nothing until the scan ends, which for an
+        endless scan is never.
+        """
+        import time
+
+        con.execute("SET streaming_buffer_size = '1KB'")
+        con.execute("SET enable_caching_operators = false")
+        try:
+            started = time.time()
+            reader = con.execute(
+                "SELECT text FROM bluesky.main.jetstream(collections => 'app.bsky.feed.post', "
+                "seconds => 0, batch_ms => 500) WHERE text ILIKE '%the%'"
+            ).to_arrow_reader(10)
+            arrivals: list[float] = []
+            for batch in reader:
+                if batch.num_rows:
+                    arrivals.append(time.time() - started)
+                if time.time() - started > 12:
+                    break
+            reader.close()
+        finally:
+            con.execute("RESET streaming_buffer_size")
+            con.execute("RESET enable_caching_operators")
+        # Measured: a filtered listen starts ~4 s later than an unfiltered one
+        # (first rows at ~6 s against ~2 s), then arrives every 0.5-1 s.
+        assert arrivals and arrivals[0] < 10, f"first filtered rows only after {arrivals[:1]}s"
+        assert len({round(a) for a in arrivals}) >= 3, "filtered rows arrived in one lump"

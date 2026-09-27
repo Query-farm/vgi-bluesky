@@ -127,6 +127,15 @@ retries 429s, transient 5xx and dropped connections five times with backoff
   flowing while the client saw none; turning off `vgi_table_buffering`,
   `vgi_split_scans` and `vgi_result_cache` changed nothing, and
   `SET streaming_buffer_size = '1KB'` fixed it over stdio and HTTP alike.
+- **DuckDB's caching operators.** A selective filter above the scan (a keyword
+  `ILIKE`) still delivered nothing to an endless listen, even with the small
+  buffer. `FILTER` is a caching operator: it holds any output chunk of 64 rows
+  or fewer (`CachingPhysicalOperator::CACHE_THRESHOLD`) and concatenates until
+  it has a full vector or the stream ends, and a keyword match over a
+  one-second batch yields exactly such chunks. The pipeline-timing UDF saw every
+  filtered row at the end of the scan; `SET enable_caching_operators = false`
+  restored once-a-second delivery. An equality filter DuckDB pushes into the
+  scan, or one that keeps most rows, is unaffected.
 
 ## Caching
 

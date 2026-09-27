@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Documentation
+
+- README recipes: posts from an author (latest, last week, most-liked, media
+  only, on a topic, several authors, live by DID) and listening to the firehose
+  for a topic (keyword, hashtag, replay, volume per minute, endless).
+- A live topic listen from a DuckDB client also needs
+  `SET enable_caching_operators = false`: `FILTER` caches output chunks of 64
+  rows or fewer until it has a full vector, so a keyword match over an endless
+  scan otherwise delivers nothing. Covered by an end-to-end test.
+
 ## 0.1.0
 
 First release: a read-only VGI worker over Bluesky's public AppView and its
