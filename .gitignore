@@ -16,3 +16,6 @@ venv/
 
 # vgi-lint baselines are per-machine unless deliberately committed
 .vgi-lint-baseline*.json
+
+# macOS Finder metadata
+.DS_Store
