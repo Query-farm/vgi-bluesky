@@ -1,10 +1,10 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python[http,haybarn]>=0.37.3",
-#     "vgi-rpc>=0.47.2",
+#     "vgi-python[http,haybarn]>=0.43.1",
+#     "vgi-rpc>=0.50.1",
 #     "httpx>=0.28.1",
-#     "websockets>=17.1",
+#     "websockets>=17.2",
 # ]
 # ///
 """Stdio entry point for the Bluesky VGI worker (``uv run``).

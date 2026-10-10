@@ -49,10 +49,12 @@ from vgi.invocation import BindResponse
 from vgi.metadata import FunctionExample
 from vgi.table_function import BindParams, ProcessParams, TableFunctionGenerator, init_single_worker
 from vgi_rpc import ArrowSerializableDataclass
+from vgi_rpc.errors import Code
 from vgi_rpc.rpc import OutputCollector
 from websockets.exceptions import ConnectionClosed
 from websockets.sync.client import ClientConnection, connect
 
+from vgi_bluesky.bluesky_api import InvalidArgumentError
 from vgi_bluesky.meta import docs, examples
 from vgi_bluesky.pushdown import build_filtered, equality
 from vgi_bluesky.schemas import JETSTREAM_SCHEMA, flatten_jetstream_event
@@ -111,6 +113,12 @@ def subscribe_url(host: str, *, collections: list[str], dids: list[str], cursor:
         params.append(("cursor", str(cursor)))
     query = urlencode(params)
     return f"{host}/subscribe" + (f"?{query}" if query else "")
+
+
+class JetstreamUnavailableError(ConnectionError):
+    """No Jetstream instance could be reached, after retries: ``UNAVAILABLE``."""
+
+    error_code = Code.UNAVAILABLE
 
 
 # ---------------------------------------------------------------------------
@@ -303,9 +311,11 @@ def _initial_query(params: ProcessParams[JetstreamArgs]) -> dict[str, Any]:
     if not dids and (pushed := equality(params, "did")):
         dids = [pushed]
     if len(collections) > _MAX_COLLECTIONS:
-        raise ValueError(f"Jetstream accepts at most {_MAX_COLLECTIONS} collections, got {len(collections)}")
+        raise InvalidArgumentError(
+            "collections", f"Jetstream accepts at most {_MAX_COLLECTIONS} collections, got {len(collections)}"
+        )
     if len(dids) > _MAX_DIDS:
-        raise ValueError(f"Jetstream accepts at most {_MAX_DIDS} DIDs, got {len(dids)}")
+        raise InvalidArgumentError("dids", f"Jetstream accepts at most {_MAX_DIDS} DIDs, got {len(dids)}")
     low, high = _pushed_time_bounds(params)
     # Jetstream's cursor is inclusive — an event's own time_us returns that
     # event first (verified live) — so `cursor` is taken as "after": feeding
@@ -367,7 +377,7 @@ def _socket_for(state: JetstreamState, query: dict[str, Any], batch_seconds: flo
                     socket, url, time.monotonic(), idle_limit=2 * batch_seconds + _IDLE_GRACE_SECONDS
                 )
             return socket
-    raise ConnectionError(f"could not connect to Jetstream ({', '.join(candidates)}): {failure}")
+    raise JetstreamUnavailableError(f"could not connect to Jetstream ({', '.join(candidates)}): {failure}")
 
 
 JETSTREAM_DOCS = docs(

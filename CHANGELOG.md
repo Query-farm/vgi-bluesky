@@ -1,6 +1,26 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
+
+### Changed
+
+- Errors carry vgi-rpc's error model (`error_code`, `error_kind`,
+  `error_details`), so a client can tell a bad argument from a rate limit from
+  an outage without reading the message:
+
+  | Error | Code | Kind | Details |
+  |---|---|---|---|
+  | Unknown actor | `NOT_FOUND` | `bluesky.actor_not_found` | `ResourceInfo`; the "Did you mean" suggestion as `LocalizedMessage`; each match's profile as a `Help` link |
+  | Malformed actor, post or feed reference; Jetstream limits | `INVALID_ARGUMENT` | `bluesky.invalid_argument` | `BadRequest` naming the argument |
+  | Handle in a post/feed URL that resolves to nothing | `NOT_FOUND` | `bluesky.actor_not_found` | `ResourceInfo` |
+  | Bluesky HTTP 400 / 401 / 403 / 404 / 429 / 5xx | `INVALID_ARGUMENT` / `UNAUTHENTICATED` / `PERMISSION_DENIED` / `NOT_FOUND` / `RESOURCE_EXHAUSTED` / `UNAVAILABLE` | — | `ErrorInfo` with the XRPC method and Bluesky's error name; `RetryInfo` on a 429 that says how long to wait |
+  | Jetstream unreachable | `UNAVAILABLE` | — | — |
+
+  Error classes keep their Python bases (`ValueError`, `ConnectionError`), so
+  existing `except` clauses still match.
+- Dependencies: vgi-python 0.43.1, vgi-rpc 0.50.1 (now declared directly),
+  websockets 17.2; dev: ruff 0.17.
+
 
 ### Changed
 

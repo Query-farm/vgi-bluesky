@@ -7,6 +7,7 @@ from collections.abc import Callable
 
 import httpx
 import pytest
+from vgi_rpc.errors import error_code_of, error_details_of, error_kind_of
 
 from vgi_bluesky import bluesky_api as api
 from vgi_bluesky.bluesky_api import BlueskyError, CacheHint
@@ -303,3 +304,70 @@ class TestActorErrors:
         exc = BlueskyError(400, "app.bsky.feed.getAuthorFeed", json.dumps(self.NOT_FOUND))
         client = _client(lambda request: httpx.Response(400, json={"error": "InvalidRequest"}))
         assert str(api.actor_error(exc, "a.test", client=client)).startswith("No Bluesky account 'a.test'.")
+
+
+class TestErrorCodes:
+    """Each error carries vgi-rpc's error model, so a client can branch without reading text."""
+
+    @pytest.mark.parametrize(
+        ("status", "code"),
+        [
+            (400, "INVALID_ARGUMENT"),
+            (401, "UNAUTHENTICATED"),
+            (403, "PERMISSION_DENIED"),
+            (404, "NOT_FOUND"),
+            (429, "RESOURCE_EXHAUSTED"),
+            (500, "UNAVAILABLE"),
+            (503, "UNAVAILABLE"),
+            (418, "UNKNOWN"),
+        ],
+    )
+    def test_http_status_maps_to_a_code(self, status: int, code: str) -> None:
+        exc = BlueskyError(status, "app.bsky.feed.getPosts", '{"error":"X","message":"y"}')
+        assert error_code_of(exc) == code
+
+    def test_error_info_names_the_call(self) -> None:
+        exc = BlueskyError(400, "app.bsky.feed.getAuthorFeed", '{"error":"InvalidRequest","message":"m"}')
+        (info,) = error_details_of(exc)
+        assert info["@type"] == "vgi_rpc.ErrorInfo"
+        assert info["metadata"] == {
+            "xrpc_method": "app.bsky.feed.getAuthorFeed",
+            "http_status": "400",
+            "xrpc_error": "InvalidRequest",
+        }
+
+    def test_a_rate_limit_carries_the_wait(self) -> None:
+        exc = BlueskyError(429, "app.bsky.feed.getPosts", "{}", retry_after=12.0)
+        retry = [d for d in error_details_of(exc) if d["@type"] == "vgi_rpc.RetryInfo"]
+        assert retry == [{"@type": "vgi_rpc.RetryInfo", "retry_delay_seconds": 12.0}]
+
+    def test_the_rate_limit_wait_reaches_the_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(api.time, "sleep", lambda _s: None)
+        client = _client(lambda _r: httpx.Response(429, json={}, headers={"retry-after": "7"}))
+        with pytest.raises(BlueskyError) as info:
+            api.trends(client=client)
+        assert {"@type": "vgi_rpc.RetryInfo", "retry_delay_seconds": 7.0} in error_details_of(info.value)
+
+    def test_an_unknown_actor_is_not_found_with_suggestions(self) -> None:
+        exc = api.ActorNotFoundError("medriscoll.bsky.social", [("medriscoll.com", "Mike Driscoll")])
+        assert (error_code_of(exc), error_kind_of(exc)) == ("NOT_FOUND", "bluesky.actor_not_found")
+        details = {d["@type"]: d for d in error_details_of(exc)}
+        assert details["vgi_rpc.ResourceInfo"]["resource_name"] == "medriscoll.bsky.social"
+        assert (
+            details["vgi_rpc.LocalizedMessage"]["message"] == "Did you mean 'medriscoll.com' (Mike Driscoll)?"
+        )
+        assert details["vgi_rpc.Help"]["links"] == [
+            {"description": "@medriscoll.com", "url": "https://bsky.app/profile/medriscoll.com"}
+        ]
+        assert isinstance(exc, ValueError)
+
+    def test_an_unknown_actor_without_suggestions_has_no_hint(self) -> None:
+        types = {d["@type"] for d in error_details_of(api.ActorNotFoundError("did:plc:x"))}
+        assert types == {"vgi_rpc.ResourceInfo"}
+
+    def test_a_malformed_actor_names_the_field(self) -> None:
+        exc = api.InvalidActorError("x y")
+        assert error_code_of(exc) == "INVALID_ARGUMENT"
+        (bad,) = error_details_of(exc)
+        assert bad["field_violations"][0]["field"] == "actor"
+        assert isinstance(exc, ValueError)

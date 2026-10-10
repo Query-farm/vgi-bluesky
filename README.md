@@ -7,7 +7,7 @@
 <h1 align="center">vgi-bluesky</h1>
 
 <p align="center">
-  <a href="https://bsky.app">Bluesky</a> in DuckDB: posts, threads, profiles, followers,<br>
+  <a href="https://bsky.app">Bluesky</a> in Haybarn (DuckDB-compatible SQL): posts, threads, profiles, followers,<br>
   likes, feeds, trending topics and the live firehose, as SQL tables.<br>
   A <strong>read-only</strong> <a href="https://query.farm/vgi/">VGI</a> worker, built by <a href="https://query.farm">🚜 Query.Farm</a>
 </p>
@@ -27,7 +27,26 @@ No credentials needed. Everything comes from [Bluesky](https://bsky.app)'s
 public API and its Jetstream firehose, and the worker can't post, like, follow
 or change anything.
 
+## Quick start
+
+Run these examples in **[Haybarn](https://query.farm/vgi/getting-started/)**,
+Query.Farm's DuckDB-compatible distribution. The `vgi` extension is distributed
+for Haybarn; the stock `duckdb` CLI cannot run these examples as-is.
+
+With [uv](https://docs.astral.sh/uv/getting-started/installation/) installed,
+start the Haybarn CLI from your terminal:
+
+```bash
+uvx haybarn-cli
+```
+
+Then paste the following SQL into the **Haybarn shell**. Install VGI on first
+use, and load it in each new session before attaching the worker:
+
 ```sql
+INSTALL vgi FROM community;
+LOAD vgi;
+
 ATTACH 'bluesky' (TYPE vgi,
   LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-bluesky vgi-bluesky');
 
@@ -48,20 +67,25 @@ GROUP BY ALL ORDER BY events DESC;
 
 ## Install
 
-`uvx` fetches and caches the worker on first use; there is nothing to install.
-Pin a tag so the worker can't change under you:
+After the [Haybarn setup above](#quick-start), `uvx` fetches and caches the
+worker on first use; no separate worker installation is needed. In the Haybarn
+shell, pin a tag so the worker can't change under you:
 
 ```sql
 ATTACH 'bluesky' (TYPE vgi,
-  LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-bluesky@v0.1.0 vgi-bluesky');
+  LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-bluesky@v0.2.0 vgi-bluesky');
 ```
 
-From a clone, run it directly, or serve it over HTTP and attach by URL:
+For local development from a clone, run the worker directly, or serve it over
+HTTP and attach by URL from Haybarn:
 
 ```bash
 uv run bluesky_worker.py            # stdio: LOCATION 'uv run bluesky_worker.py'
 uv run serve.py --port 8000         # HTTP:  LOCATION 'http://localhost:8000'
 ```
+
+These commands start the worker, not an interactive SQL shell. To query it,
+use `uvx haybarn-cli`, load VGI, and `ATTACH` with the corresponding `LOCATION`.
 
 The package isn't published to PyPI; install it from this repository.
 
@@ -148,7 +172,7 @@ every `batch_events` events (default 1000) or `batch_ms` milliseconds (default
 1000), whichever comes first.
 
 > [!IMPORTANT]
-> **Streaming to a DuckDB client? Change two settings first:**
+> **Streaming results from Haybarn? Change two settings first:**
 >
 > ```sql
 > SET streaming_buffer_size = '1KB';        -- don't wait for ~1 MB of results

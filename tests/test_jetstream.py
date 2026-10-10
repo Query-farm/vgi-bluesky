@@ -185,8 +185,9 @@ class TestInitialQuery:
 
     def test_too_many_collections_is_an_error(self) -> None:
         params = _Params(args=JetstreamArgs(collections=",".join(f"c{i}" for i in range(101))))
-        with pytest.raises(ValueError, match="at most 100"):
+        with pytest.raises(jetstream.InvalidArgumentError, match="at most 100") as info:
             jetstream._initial_query(params)  # type: ignore[arg-type]
+        assert info.value.error_code == "INVALID_ARGUMENT" and info.value.field == "collections"
 
 
 # ---------------------------------------------------------------------------
@@ -322,8 +323,9 @@ class TestTickLoop:
             raise OSError("down")
 
         monkeypatch.setattr(jetstream, "connect", refuse)
-        with pytest.raises(ConnectionError):
+        with pytest.raises(jetstream.JetstreamUnavailableError) as info:
             _run(_Params(args=JetstreamArgs(cursor=US0, batch_ms=50)))
+        assert info.value.error_code == "UNAVAILABLE"
         assert len(sockets) == jetstream._CONNECT_ATTEMPTS
         assert {url.split("/subscribe")[0] for url, _s in sockets} == {jetstream.hosts()[0]}
 

@@ -59,13 +59,14 @@ def _require_post_uri(value: str) -> str:
     """
     parts = api.post_uri_parts(value)
     if parts is None or parts[1] != "app.bsky.feed.post":
-        raise ValueError(
+        raise api.InvalidArgumentError(
+            "uri",
             f"{value!r} is not a post reference; pass at://<did>/app.bsky.feed.post/<rkey> "
-            "or https://bsky.app/profile/<handle>/post/<rkey>"
+            "or https://bsky.app/profile/<handle>/post/<rkey>",
         )
     uri = api.canonical_uri(value, dids={})
     if uri is None:
-        raise ValueError(f"the handle in {value!r} does not resolve to an account")
+        raise api.UnresolvableHandleError(value, parts[0])
     return uri
 
 

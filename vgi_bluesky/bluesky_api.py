@@ -31,6 +31,17 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 
 import httpx
+from vgi_rpc.errors import (
+    BadRequest,
+    Code,
+    ErrorInfo,
+    FieldViolation,
+    Help,
+    HelpLink,
+    LocalizedMessage,
+    ResourceInfo,
+    RetryInfo,
+)
 
 #: The CDN-fronted, unauthenticated read replica of the Bluesky AppView.
 DEFAULT_APPVIEW_URL = "https://public.api.bsky.app"
@@ -197,21 +208,47 @@ def reset_shared_client() -> None:
 atexit.register(reset_shared_client)
 
 
+#: How an HTTP status from Bluesky reads as a vgi-rpc error code. A 400 is
+#: "InvalidRequest" — nearly always a value that came from the caller's SQL —
+#: and everything 5xx is the service being unavailable, not this worker failing.
+_STATUS_CODES: dict[int, Code] = {
+    400: Code.INVALID_ARGUMENT,
+    401: Code.UNAUTHENTICATED,
+    403: Code.PERMISSION_DENIED,
+    404: Code.NOT_FOUND,
+    429: Code.RESOURCE_EXHAUSTED,
+}
+
+
 class BlueskyError(RuntimeError):
     """A non-2xx XRPC response, carrying the status, method and Bluesky's own error.
 
     XRPC errors are JSON — ``{"error": "InvalidRequest", "message": "Profile not
     found"}`` — so the message is built from those two fields rather than from
     the raw body, which is what a DuckDB user reads first.
+
+    It also carries vgi-rpc's error model (``error_code`` / ``error_details``),
+    so a client can tell a bad argument from a rate limit from an outage
+    without reading the message: 400 is ``INVALID_ARGUMENT``, 429 is
+    ``RESOURCE_EXHAUSTED`` with a ``RetryInfo`` when Bluesky said how long to
+    wait, 5xx is ``UNAVAILABLE``.
     """
 
-    def __init__(self, status: int, method: str, body: str) -> None:
+    def __init__(self, status: int, method: str, body: str, *, retry_after: float | None = None) -> None:
         self.status = status
         self.method = method
         self.error, self.message = _xrpc_error(body)
         short = method.rsplit(".", 1)[-1]
         detail = f"{self.error}: {self.message}" if self.error else self.message
         super().__init__(f"Bluesky {short} failed (HTTP {status}): {detail[:400]}")
+        self.error_code: Code = _STATUS_CODES.get(status, Code.UNAVAILABLE if status >= 500 else Code.UNKNOWN)
+        metadata = {"xrpc_method": method, "http_status": str(status)}
+        if self.error:
+            metadata["xrpc_error"] = self.error
+        details: list[ErrorInfo | RetryInfo] = [ErrorInfo(metadata=metadata)]
+        if status == 429 and retry_after is not None:
+            details.append(RetryInfo(retry_delay_seconds=retry_after))
+        self.error_details = details
 
 
 def _xrpc_error(body: str) -> tuple[str, str]:
@@ -225,12 +262,79 @@ def _xrpc_error(body: str) -> tuple[str, str]:
     return str(payload.get("error") or ""), str(payload.get("message") or body.strip())
 
 
-class ActorNotFoundError(ValueError):
-    """An actor argument named no Bluesky account."""
+class InvalidArgumentError(ValueError):
+    """An argument value that can never work: malformed, or beyond a hard limit.
+
+    ``INVALID_ARGUMENT`` with a ``BadRequest`` naming the argument, so a client
+    can point at the field. Still a ``ValueError`` for existing ``except``
+    clauses.
+    """
+
+    error_code = Code.INVALID_ARGUMENT
+    error_kind = "bluesky.invalid_argument"
+
+    def __init__(self, field: str, message: str) -> None:
+        super().__init__(message)
+        self.field = field
+        self.error_details = [BadRequest(field_violations=[FieldViolation(field=field, description=message)])]
 
 
-class InvalidActorError(ValueError):
+class InvalidActorError(InvalidArgumentError):
     """An actor argument was not a handle, DID or profile URL at all."""
+
+    def __init__(self, actor: str) -> None:
+        super().__init__(
+            "actor",
+            f"{actor!r} is not a Bluesky account identifier. Pass a handle such as 'bsky.app', "
+            "a DID such as 'did:plc:…', '@handle', or a https://bsky.app/profile/… URL.",
+        )
+
+
+class ActorNotFoundError(ValueError):
+    """An actor argument named no Bluesky account.
+
+    ``NOT_FOUND``, with a ``ResourceInfo`` naming the actor and — when the
+    account search found likely matches — the suggestion as a
+    ``LocalizedMessage`` and each match's profile as a ``Help`` link.
+    """
+
+    error_code = Code.NOT_FOUND
+    error_kind = "bluesky.actor_not_found"
+
+    def __init__(self, actor: str, suggestions: Sequence[tuple[str, str]] = ()) -> None:
+        guesses = [f"{handle!r} ({name})" if name else repr(handle) for handle, name in suggestions]
+        hint = f"Did you mean {' or '.join(guesses)}?" if guesses else ""
+        message = f"No Bluesky account {actor!r}." + (f" {hint}" if hint else "")
+        super().__init__(f"{message} search_actors('…') finds accounts by name.")
+        self.actor = actor
+        self.suggestions = list(suggestions)
+        details: list[ResourceInfo | LocalizedMessage | Help] = [
+            ResourceInfo(resource_type="bluesky.actor", resource_name=actor, description="no such account")
+        ]
+        if hint:
+            details.append(LocalizedMessage(locale="en", message=hint))
+            details.append(
+                Help(
+                    links=[
+                        HelpLink(description=f"@{handle}", url=f"https://bsky.app/profile/{handle}")
+                        for handle, _name in suggestions
+                    ]
+                )
+            )
+        self.error_details = details
+
+
+class UnresolvableHandleError(ValueError):
+    """A post or feed reference whose handle names no account."""
+
+    error_code = Code.NOT_FOUND
+    error_kind = "bluesky.actor_not_found"
+
+    def __init__(self, reference: str, handle: str) -> None:
+        super().__init__(f"the handle in {reference!r} does not resolve to an account")
+        self.error_details = [
+            ResourceInfo(resource_type="bluesky.actor", resource_name=handle, description="no such account")
+        ]
 
 
 #: How XRPC words "no such account": "Profile not found" (getAuthorFeed,
@@ -249,26 +353,21 @@ def actor_error(exc: BlueskyError, actor: str, *, client: httpx.Client | None = 
     if exc.status != 400:
         return None
     if "Invalid AT identifier" in exc.message:
-        return InvalidActorError(
-            f"{actor!r} is not a Bluesky account identifier. Pass a handle such as 'bsky.app', "
-            "a DID such as 'did:plc:…', '@handle', or a https://bsky.app/profile/… URL."
-        )
+        return InvalidActorError(actor)
     if not _NOT_FOUND.match(exc.message):
         return None
-    message = f"No Bluesky account {actor!r}."
+    suggestions: list[tuple[str, str]] = []
     if not actor.startswith("did:") and (term := actor.split(".")[0].strip()):
         try:
             found = _get("app.bsky.actor.searchActors", {"q": term, "limit": 3}, client=client)
         except (BlueskyError, httpx.HTTPError):
             found = {}
-        guesses = [
-            f"{a['handle']!r} ({a['displayName']})" if a.get("displayName") else repr(a["handle"])
+        suggestions = [
+            (str(a["handle"]), str(a.get("displayName") or ""))
             for a in found.get("actors") or []
             if isinstance(a, dict) and a.get("handle") and a.get("handle") != actor
         ]
-        if guesses:
-            message += f" Did you mean {' or '.join(guesses)}?"
-    return ActorNotFoundError(f"{message} search_actors('…') finds accounts by name.")
+    return ActorNotFoundError(actor, suggestions)
 
 
 def _retry_after(response: httpx.Response) -> float | None:
@@ -341,7 +440,7 @@ def _get(
     if hint is not None and response.status_code < 400:
         hint.observe(response)
     if response.status_code >= 400:
-        raise BlueskyError(response.status_code, method, response.text)
+        raise BlueskyError(response.status_code, method, response.text, retry_after=_retry_after(response))
     try:
         return response.json()
     except ValueError as exc:

@@ -24,20 +24,22 @@ dependencies = [
     # `haybarn` is not optional: vgi-python binds a pushed-down WHERE clause with
     # an in-process DuckDB engine, and without one every filtered scan fails at
     # runtime with "No DuckDB-compatible engine is installed".
-    "vgi-python[http,haybarn]>=0.37.3",
+    "vgi-python[http,haybarn]>=0.43.1",
+    # Imported directly: errors raise vgi-rpc's coded StatusError model (>= 0.48).
+    "vgi-rpc>=0.50.1",
     "httpx>=0.28.1",
-    "websockets>=17.1",
+    "websockets>=17.2",
 ]
 
 [project.optional-dependencies]
-serve = ["vgi-python[http,haybarn,oauth]>=0.37.3", "vgi-rpc[sentry]>=0.47.2"]
+serve = ["vgi-python[http,haybarn,oauth]>=0.43.1", "vgi-rpc[sentry]>=0.50.1"]
 
 [dependency-groups]
 dev = [
     "pytest>=9.1",
     # Pinned to a minor: the rule set is version-dependent, so an unpinned ruff
     # means CI can fail on a commit that was clean locally.
-    "ruff>=0.16.9,<0.17",
+    "ruff>=0.17.0,<0.18",
     # Drives a real ATTACH in tests/test_end_to_end.py. Haybarn is the DuckDB
     # distribution the vgi extension is published for (and what vgi-lint uses);
     # stock `duckdb` wheels have no matching vgi build. It ships only release
@@ -45,7 +47,7 @@ dev = [
     "haybarn>=1.5.5rc1,<1.6",
     # DuckDB materializes TIMESTAMP WITH TIME ZONE through pytz; without it a
     # scan that returns one fails at fetch time, not at bind.
-    "pytz>=2026.4",
+    "pytz>=2026.5",
     # Reads vgi-agent-tests.yaml, the private graders, in tests/test_catalog.py.
     "pyyaml>=6.0.3",
 ]

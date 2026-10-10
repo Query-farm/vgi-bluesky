@@ -47,13 +47,14 @@ def _require_feed_uri(value: str) -> str:
     """A feed reference as a DID-authority AT-URI, or a clear error naming the input."""
     parts = api.post_uri_parts(value)
     if parts is None or parts[1] != "app.bsky.feed.generator":
-        raise ValueError(
+        raise api.InvalidArgumentError(
+            "uri",
             f"{value!r} is not a feed reference; pass at://<did>/app.bsky.feed.generator/<rkey> "
-            "or https://bsky.app/profile/<handle>/feed/<rkey>"
+            "or https://bsky.app/profile/<handle>/feed/<rkey>",
         )
     uri = api.canonical_uri(value, dids={})
     if uri is None:
-        raise ValueError(f"the handle in {value!r} does not resolve to an account")
+        raise api.UnresolvableHandleError(value, parts[0])
     return uri
 
 
