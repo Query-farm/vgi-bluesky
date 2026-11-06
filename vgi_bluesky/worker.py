@@ -19,7 +19,7 @@ import json
 import sys
 
 from vgi import Worker
-from vgi.catalog import Catalog, ReadOnlyCatalogInterface, Schema
+from vgi.catalog import Catalog, ReadOnlyCatalogInterface, Schema, constraint_record
 from vgi.catalog.catalog_interface import CatalogInfo
 from vgi.catalog.descriptors import Table
 
@@ -435,8 +435,26 @@ _BLUESKY_CATALOG = Catalog(
                     comment="What Bluesky currently reports as trending, in rank order",
                     tags=_TRENDS_DOCS,
                     column_comments=column_comments(TREND_SCHEMA),
-                    primary_key=(("rank",),),
-                    not_null=("rank",),
+                    constraints=(
+                        constraint_record(
+                            ["main"],
+                            "trends",
+                            "pk",
+                            "PRIMARY_KEY",
+                            [["rank"]],
+                            enforcement="ENFORCED",
+                            validation="ALL_ROWS",
+                        ),
+                        constraint_record(
+                            ["main"],
+                            "trends",
+                            "rank_not_null",
+                            "NOT_NULL",
+                            [["rank"]],
+                            enforcement="ENFORCED",
+                            validation="ALL_ROWS",
+                        ),
+                    ),
                     cardinality_estimate=10,
                     cardinality_max=25,
                 ),

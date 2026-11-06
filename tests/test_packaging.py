@@ -86,17 +86,17 @@ def _script_requirements(path: Path) -> list[str]:
 class TestFilterEngine:
     """vgi-python binds a pushed-down WHERE with an in-process DuckDB engine.
 
-    Without the `haybarn` extra the worker imports and binds fine, and then every
+    Without the `duckdb` extra the worker imports and binds fine, and then every
     filtered scan fails at runtime with "No DuckDB-compatible engine is
     installed". Only a real ATTACH noticed; this test notices first.
     """
 
     def test_pyproject_requests_the_engine(self, project: dict) -> None:
-        assert "haybarn" in _vgi_python_extras(project["dependencies"])
+        assert "duckdb" in _vgi_python_extras(project["dependencies"])
 
     @pytest.mark.parametrize("script", SCRIPTS)
     def test_scripts_request_the_engine(self, script: str) -> None:
-        assert "haybarn" in _vgi_python_extras(_script_requirements(ROOT / script))
+        assert "duckdb" in _vgi_python_extras(_script_requirements(ROOT / script))
 
 
 class TestTransport:
