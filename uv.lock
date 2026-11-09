@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.13"
 
 [[package]]
@@ -852,8 +852,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "vgi-python", extras = ["duckdb", "http"], specifier = ">=0.49.0" },
-    { name = "vgi-python", extras = ["duckdb", "http", "oauth"], marker = "extra == 'serve'", specifier = ">=0.49.0" },
+    { name = "vgi-python", extras = ["duckdb", "http"], specifier = ">=0.50.0" },
+    { name = "vgi-python", extras = ["duckdb", "http", "oauth"], marker = "extra == 'serve'", specifier = ">=0.50.0" },
     { name = "vgi-rpc", specifier = ">=0.53.1" },
     { name = "vgi-rpc", extras = ["sentry"], marker = "extra == 'serve'", specifier = ">=0.53.1" },
     { name = "websockets", specifier = ">=17.2" },
@@ -871,7 +871,7 @@ dev = [
 
 [[package]]
 name = "vgi-python"
-version = "0.49.0"
+version = "0.50.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -882,9 +882,9 @@ dependencies = [
     { name = "typer" },
     { name = "vgi-rpc" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f7/f4/1220d971d088ac6dcbd4be947525dc31706f944f4d135d7d826e61981f75/vgi_python-0.49.0.tar.gz", hash = "sha256:6698f72e30d61e4050190876ccdbe3f3cb258d829c627c4567972c04581ff0eb", size = 5496019, upload-time = "2026-11-06T02:03:24.625Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/65/02db3e8e1fde17bf2d9b080bf6e20c4e6ed2db674efbfc80d0bc1009acfb/vgi_python-0.50.0.tar.gz", hash = "sha256:c1481e064dd7301ad88dd803de0188d29abf25445a80fff041db90e40fdf99e8", size = 5551678, upload-time = "2026-11-08T22:02:43.248Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d6/18/ec350b2d462d957d74f9ea2ac8c2bfd41cc9461ed66f82451891680d7b78/vgi_python-0.49.0-py3-none-any.whl", hash = "sha256:67f4e093c64f7e484d69694ad43701396b47bfaaea4ef1ea5599c05e0e76b809", size = 1411687, upload-time = "2026-11-06T02:03:22.251Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/80/48affe2985a7a7514529b050af290f005d0b4ef7fd9491977f4814ee9f27/vgi_python-0.50.0-py3-none-any.whl", hash = "sha256:69949ca5ad3d6c926e8edb86d92b677c6670caf4e55e499576ce8cb8d60d0534", size = 1442720, upload-time = "2026-11-08T22:02:40.855Z" },
 ]
 
 [package.optional-dependencies]
