@@ -49,5 +49,5 @@ jobs:
       # Serial on purpose: every example is a real API call.
       - name: vgi-lint (structural + behavioural)
         run: >
-          uvx --no-sources --from vgi-lint-check==0.82.0 vgi-lint lint "uv run --no-sources bluesky_worker.py"
+          uvx --no-sources --from vgi-lint-check==2.2.0 vgi-lint lint "uv run --no-sources bluesky_worker.py"
           --execute-concurrency 1 --no-check-links --audit-waivers --fail-on error
