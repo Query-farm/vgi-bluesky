@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+### Changed
+
+- Speaks VGI protocol 3.2, which the published vgi extension (Haybarn 2.0)
+  now requires; 0.2.0 is rejected by it. Dependencies: vgi-python 0.50.0,
+  vgi-rpc 0.53.1; dev: haybarn 2.0.
+- The `trends` table declares its primary key and NOT NULL column as
+  constraint records.
+- The catalog carries a one-sentence `vgi.subtitle` for listings.
+
 ## 0.2.0
 
 ### Changed
