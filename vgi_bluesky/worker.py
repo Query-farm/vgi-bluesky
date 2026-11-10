@@ -292,6 +292,9 @@ _CATALOG_TAGS = {
     "provider": "bluesky",
     "domain": "social-media",
     "vgi.title": "Bluesky Social",
+    "vgi.subtitle": (
+        "Query Bluesky posts, threads, profiles, followers, feeds, trending topics and the live firehose."
+    ),
     "vgi.source_url": SOURCE_URL,
     "vgi.author": "Query Farm LLC <hello@query.farm>",
     "vgi.copyright": (
