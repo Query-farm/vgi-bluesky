@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1
+
+### Fixed
+
+- Filtering `jetstream` by collection failed with "'numpy' is required for this
+  operation": DuckDB's filter evaluator needs numpy for that predicate, and
+  vgi-python's `duckdb` extra doesn't install it. numpy is now a direct
+  dependency.
+
 ## 0.3.0
 
 ### Changed

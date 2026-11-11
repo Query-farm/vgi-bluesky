@@ -24,6 +24,9 @@ dependencies = [
     # The SDK needs its pinned DuckDB 1.5 filter evaluator inside the worker.
     # Native SQL tests use Haybarn 2.0 separately as the VGI 3.2 client.
     "vgi-python[http,duckdb]>=0.50.0",
+    # DuckDB's filter evaluator needs numpy for some pushed-down predicates (e.g. the
+    # Jetstream collection filter); vgi-python's duckdb extra doesn't pull it in.
+    "numpy>=2.0",
     # Imported directly: errors raise vgi-rpc's coded StatusError model (>= 0.48).
     "vgi-rpc>=0.53.1",
     "httpx>=0.28.1",

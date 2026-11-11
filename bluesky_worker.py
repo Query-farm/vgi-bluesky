@@ -2,6 +2,7 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #     "vgi-python[http,duckdb]>=0.50.0",
+#     "numpy>=2.0",
 #     "vgi-rpc>=0.53.1",
 #     "httpx>=0.28.1",
 #     "websockets>=17.2",
