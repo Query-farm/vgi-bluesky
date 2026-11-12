@@ -200,7 +200,7 @@ class TestJetstream:
         con.execute("SET streaming_buffer_size = '1KB'")
         try:
             started = time.time()
-            reader = con.execute(
+            reader = con.sql(
                 "SELECT time_us FROM bluesky.main.jetstream(seconds => 0, batch_ms => 500)"
             ).to_arrow_reader(100)
             arrivals: list[float] = []
@@ -231,7 +231,7 @@ class TestJetstream:
         con.execute("SET enable_caching_operators = false")
         try:
             started = time.time()
-            reader = con.execute(
+            reader = con.sql(
                 "SELECT text FROM bluesky.main.jetstream(collections => 'app.bsky.feed.post', "
                 "seconds => 0, batch_ms => 500) WHERE text ILIKE '%the%'"
             ).to_arrow_reader(10)

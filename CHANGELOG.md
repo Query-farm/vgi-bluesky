@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0
+
+### Changed
+
+- Speaks VGI protocol 3.3, which the published vgi extension now requires; 3.2
+  extensions are incompatible. Dependencies: vgi-python 0.51.0.
+- The `trends` table is unchanged; `all_trends()` stays a public table
+  function (it is also listed in the schema functions).
+- The end-to-end streaming tests read through `con.sql(...).to_arrow_reader()`:
+  on Haybarn 2.0 a DB-API `execute(...).to_arrow_reader()` materializes the
+  whole result first, so an endless Jetstream listen never returned.
+
 ## 0.3.1
 
 ### Fixed
