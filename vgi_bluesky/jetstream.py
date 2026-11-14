@@ -468,9 +468,9 @@ JETSTREAM_DOCS = docs(
             "GROUP BY tag ORDER BY uses DESC LIMIT 15",
         ),
         (
-            "The most-liked posts of the last 30 seconds, hydrated with post()",
+            "The most-liked posts of the last 15 seconds, hydrated with post()",
             "SELECT p.author_handle, p.text, j.likes FROM (SELECT subject_uri, count(*) AS likes "
-            "FROM bluesky.main.jetstream(collections => 'app.bsky.feed.like', seconds => 30) "
+            "FROM bluesky.main.jetstream(collections => 'app.bsky.feed.like', seconds => 15) "
             "WHERE subject_uri LIKE '%/app.bsky.feed.post/%' GROUP BY subject_uri "
             "ORDER BY likes DESC LIMIT 5) j, LATERAL bluesky.main.post(j.subject_uri) p "
             "ORDER BY j.likes DESC",

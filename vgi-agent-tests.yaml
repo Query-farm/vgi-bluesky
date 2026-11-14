@@ -100,6 +100,18 @@ tasks:
     success_criteria: Uses actor_feeds() for the account's own feeds rather than searching popular_feeds().
     unordered: true
 
+  # Live data with no stable answer to compare against, and a check_sql cannot
+  # see what the analyst answered — so the judge grades the method and the
+  # shape of the result. Five rows, ranked by followers_count.
+  - name: liker_reach
+    success_criteria: >-
+      Finds the pinned post's URI (author_feed('bsky.app', include_pins => true) with
+      reason = 'pin', or the known at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l),
+      lists its 50 most recent likers with likes(<that URI as a literal>) LIMIT 50, joins each liker's
+      did to profile() (a LATERAL or a batched lookup) and returns five handles with followers_count,
+      largest first. Fails if it counts likes, uses followers() of bsky.app, ranks the likers by
+      anything but their own follower count, or reads more or fewer than 50 likers.
+
   - name: trends_by_category
     reference_sql: >-
       SELECT category, sum(post_count) AS posts FROM bluesky.main.all_trends()

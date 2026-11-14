@@ -49,6 +49,24 @@ _POST_REF_DOC = "Post AT-URI or bsky.app post URL"
 #: lookups can take a column instead.
 WELCOME_POST = "at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l"
 
+#: Composed examples, each published on the function that drives it and in the
+#: schema-level list. A listing feeds a blended lookup under LATERAL — the one
+#: direction composition works in: a listing needs a literal argument.
+TOPIC_VOICES = (
+    "The best-followed accounts posting about DuckDB, with how many of the latest 100 matches each wrote",
+    "SELECT p.handle, p.followers_count, count(*) AS posts FROM ("
+    "SELECT author_did FROM bluesky.main.search_posts('duckdb') LIMIT 100) s, "
+    "LATERAL bluesky.main.profile(s.author_did) p "
+    "GROUP BY p.handle, p.followers_count ORDER BY p.followers_count DESC, p.handle LIMIT 10",
+)
+REPLIER_REACH = (
+    "Everyone replying under the official account's latest post, biggest audiences first",
+    "SELECT t.author_handle, t.text, p.followers_count FROM bluesky.main.thread(("
+    "SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') "
+    "WHERE reason IS NULL LIMIT 1)) t, LATERAL bluesky.main.profile(t.author_did) p "
+    "WHERE t.depth > 0 ORDER BY p.followers_count DESC LIMIT 10",
+)
+
 
 def _require_post_uri(value: str) -> str:
     """A post reference as a DID-authority AT-URI, or a clear error naming the input.
@@ -230,6 +248,7 @@ class ThreadFunction(RowTransformFunction[ThreadArgs]):
                     "WHERE reason IS NULL LIMIT 1), depth => 1) "
                     "WHERE depth = 1 ORDER BY like_count DESC LIMIT 10",
                 ),
+                REPLIER_REACH,
             ),
         )
         examples = [
@@ -528,6 +547,7 @@ class SearchPostsFunction(TableFunctionGenerator[SearchPostsArgs, PagedScanState
                     "SELECT created_at, author_handle, text FROM bluesky.main.search_posts('duckdb') "
                     "LIMIT 25",
                 ),
+                TOPIC_VOICES,
                 (
                     "The most-engaged posts on a topic this week",
                     "SELECT author_handle, text, like_count, repost_count "

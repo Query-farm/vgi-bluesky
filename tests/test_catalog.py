@@ -165,3 +165,20 @@ class TestExamplesReferenceRealObjects:
         referenced = set(re.findall(r"bluesky\.main\.([a-z_]+)", sql))
         assert referenced, f"example does not reference the catalog: {sql}"
         assert referenced <= NAMES, referenced - NAMES
+
+
+#: vgi-lint's per-query cap (`execute_timeout`), which is also what an agent's
+#: query tool allows. A live jetstream() read lasts its whole `seconds` plus any
+#: hydration after it, so a 30-second listen can never finish inside the cap.
+_LINT_QUERY_CAP_SECONDS = 30
+#: Headroom left for connecting and for hydrating rows after the listen ends.
+_MAX_LIVE_LISTEN_SECONDS = _LINT_QUERY_CAP_SECONDS - 10
+
+
+@pytest.mark.parametrize("sql", [s for s in _all_example_sql() if "jetstream(" in s])
+def test_live_jetstream_examples_finish_inside_the_lint_cap(sql: str) -> None:
+    """A replay bounded by `event_time <` stops at that bound, not at `seconds`."""
+    if re.search(r"event_time\s*<", sql):
+        return
+    seconds = [int(n) for n in re.findall(r"seconds\s*=>\s*(\d+)", sql)] or [10]  # 10 = default
+    assert all(0 < n <= _MAX_LIVE_LISTEN_SECONDS for n in seconds), sql

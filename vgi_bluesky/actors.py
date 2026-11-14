@@ -45,6 +45,15 @@ from vgi_bluesky.schemas import (
     flatten_profile,
 )
 
+#: Composed example: a listing feeds the blended ``profile`` lookup under
+#: LATERAL. Published on ``followers`` and in the schema-level list.
+NEW_FOLLOWER_REACH = (
+    "The biggest accounts among the 100 that most recently followed an account",
+    "SELECT p.handle, p.display_name, p.followers_count FROM ("
+    "SELECT did FROM bluesky.main.followers('bsky.app') LIMIT 100) f, "
+    "LATERAL bluesky.main.profile(f.did) p ORDER BY p.followers_count DESC LIMIT 10",
+)
+
 
 @dataclass(slots=True, frozen=True, kw_only=True)
 class ActorArgs:
@@ -267,6 +276,7 @@ class FollowersFunction(TableFunctionGenerator[ActorArgs, PagedScanState]):
                     "The 50 most recent followers of an account",
                     "SELECT handle, display_name FROM bluesky.main.followers('bsky.app') LIMIT 50",
                 ),
+                NEW_FOLLOWER_REACH,
             ),
         )
         examples = [

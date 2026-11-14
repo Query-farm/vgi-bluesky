@@ -24,11 +24,11 @@ from vgi.catalog.catalog_interface import CatalogInfo
 from vgi.catalog.descriptors import Table
 
 from vgi_bluesky import __version__
-from vgi_bluesky.actors import ACTOR_FUNCTIONS
+from vgi_bluesky.actors import ACTOR_FUNCTIONS, NEW_FOLLOWER_REACH
 from vgi_bluesky.feeds import DISCOVER_FEED, FEED_FUNCTIONS, AllTrendsFunction
 from vgi_bluesky.jetstream import JETSTREAM_FUNCTIONS
 from vgi_bluesky.meta import column_comments, docs, examples, keywords
-from vgi_bluesky.posts import POST_FUNCTIONS
+from vgi_bluesky.posts import POST_FUNCTIONS, REPLIER_REACH, TOPIC_VOICES
 from vgi_bluesky.schemas import TREND_SCHEMA
 
 IMPLEMENTATION_VERSION = __version__
@@ -73,6 +73,9 @@ _EXAMPLE_QUERIES = examples(
         f"SELECT author_handle, text, like_count FROM bluesky.main.thread({_LATEST_POST}) "
         "WHERE depth > 0 ORDER BY like_count DESC LIMIT 10",
     ),
+    TOPIC_VOICES,
+    NEW_FOLLOWER_REACH,
+    REPLIER_REACH,
     (
         "What the Discover feed is showing",
         f"SELECT author_handle, text FROM bluesky.main.feed('{DISCOVER_FEED}') LIMIT 20",
@@ -226,6 +229,14 @@ _AGENT_TEST_TASKS = json.dumps(
             "name": "an_accounts_feeds",
             "prompt": (
                 "Which custom feeds has the bsky.app account published, and how many likes does each have?"
+            ),
+        },
+        {
+            "name": "liker_reach",
+            "prompt": (
+                "Of the 50 accounts that most recently liked the post bsky.app has pinned to its "
+                "profile, which five have the most followers of their own? Give each handle and "
+                "follower count."
             ),
         },
         {

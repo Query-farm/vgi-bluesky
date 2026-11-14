@@ -120,6 +120,13 @@ WHERE reason IS NULL LIMIT 20;
 SELECT author_handle, text, like_count
 FROM bluesky.thread('https://bsky.app/profile/bsky.app/post/3l6oveex3ii2l', depth => 1)
 WHERE depth = 1 ORDER BY like_count DESC LIMIT 10;
+
+-- Who is posting about a topic, biggest audiences first: a search feeds profile()
+SELECT p.handle, p.followers_count, count(*) AS posts
+FROM (SELECT author_did FROM bluesky.search_posts('duckdb') LIMIT 100) s,
+     LATERAL bluesky.profile(s.author_did) p
+GROUP BY p.handle, p.followers_count
+ORDER BY p.followers_count DESC, p.handle LIMIT 10;
 ```
 
 **Good to know:**
