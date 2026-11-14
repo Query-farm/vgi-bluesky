@@ -326,6 +326,10 @@ unusual. Replay a longer window to see whether it's being discussed at all. The
 replay's `seconds` must cover the time to read it: 10 minutes of posts took
 about 10 seconds.
 
+## Notebooks
+
+[Explore the executed feed-distribution notebook](notebooks/README.md) to compare typical likes and concentration with recorded public data and an explicit live mode.
+
 ## Development
 
 Setup, design notes, caching, CI and tests are in
