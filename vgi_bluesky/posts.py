@@ -60,11 +60,11 @@ TOPIC_VOICES = (
     "GROUP BY p.handle, p.followers_count ORDER BY p.followers_count DESC, p.handle LIMIT 10",
 )
 REPLIER_REACH = (
-    "Everyone replying under the official account's latest post, biggest audiences first",
+    "Replies under the official account's latest post from its best-followed repliers, biggest first",
     "SELECT t.author_handle, t.text, p.followers_count FROM bluesky.main.thread(("
     "SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') "
     "WHERE reason IS NULL LIMIT 1)) t, LATERAL bluesky.main.profile(t.author_did) p "
-    "WHERE t.depth > 0 ORDER BY p.followers_count DESC LIMIT 10",
+    "WHERE t.depth > 0 ORDER BY p.followers_count DESC, t.uri LIMIT 10",
 )
 
 

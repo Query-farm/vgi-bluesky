@@ -51,7 +51,7 @@ NEW_FOLLOWER_REACH = (
     "The biggest accounts among the 100 that most recently followed an account",
     "SELECT p.handle, p.display_name, p.followers_count FROM ("
     "SELECT did FROM bluesky.main.followers('bsky.app') LIMIT 100) f, "
-    "LATERAL bluesky.main.profile(f.did) p ORDER BY p.followers_count DESC LIMIT 10",
+    "LATERAL bluesky.main.profile(f.did) p ORDER BY p.followers_count DESC, p.did LIMIT 10",
 )
 
 
