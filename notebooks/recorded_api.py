@@ -30,7 +30,11 @@ def start_replay() -> ThreadingHTTPServer:
                 and query.get("includePins", ["false"]) == ["false"]
                 and set(query) <= {"actor", "filter", "limit", "includePins"}
             )
-            body = payload if supported else b'{"error":"Replay supports only the documented bounded feed request"}'
+            body = (
+                payload
+                if supported
+                else b'{"error":"Replay supports only the documented bounded feed request"}'
+            )
             self.send_response(200 if supported else 400)
             self.send_header("Content-Type", "application/json")
             self.send_header("Cache-Control", "no-store")

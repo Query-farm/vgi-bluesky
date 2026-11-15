@@ -17,8 +17,15 @@ whichever closes first — and emits it, so DuckDB sees rows as they arrive and 
 Measured against ``jetstream2.us-east.bsky.network``:
 
 * About 400 events a second across the network, roughly two thirds of them likes.
-* ``time_us`` is strictly increasing and unique within a connection, which is
-  what makes an upper time bound a safe stopping rule.
+* ``time_us`` never decreases within a connection, which is what makes an
+  upper time bound a safe stopping rule. It is **not** unique: Jetstream stamps
+  each firehose commit once and emits one event per record operation in it, so
+  a multi-op commit (a post with its threadgate and postgate, a batched write)
+  is several events — same DID, same ``rev`` — sharing one
+  ``time_us``. Measured 2026-11-15 on all four public instances: 1–7% of
+  adjacent pairs tie, groups of up to six, never a step backwards. Replay from
+  a tied ``time_us`` returns the whole group again, byte-identical and in the
+  same order.
 * ``identity`` and ``account`` events arrive even when ``wantedCollections`` is
   set, so a collection filter is a superset of what a ``WHERE collection = ...``
   keeps — safe to push down.
@@ -34,6 +41,7 @@ from __future__ import annotations
 
 import atexit
 import contextlib
+import hashlib
 import json
 import os
 import threading
@@ -91,6 +99,10 @@ _CONNECT_BACKOFF_SECONDS = 0.5
 #: scan as ten seconds of dead time. A stream we are done with needs no graceful
 #: goodbye, so the wait is short and happens off the query's thread.
 _CLOSE_TIMEOUT = 0.5
+
+#: How long a stopping scan waits for the rest of the commit it is in. The ops
+#: of one commit leave Jetstream back to back, so they are already buffered.
+_COMMIT_GRACE_SECONDS = 0.2
 
 #: Jetstream refuses a ``wantedCollections`` list longer than 100 (verified: 101
 #: is an HTTP 400 at the handshake) and documents a 10,000 cap on ``wantedDids``.
@@ -202,8 +214,12 @@ class JetstreamState(ArrowSerializableDataclass):
 
     scan_id: str = ""
     host: str = ""
-    #: ``time_us`` of the last event read; resume strictly after it.
+    #: ``time_us`` of the last event read. Not unique — every op of one commit
+    #: shares it — so a reconnect resumes *at* it, and ``cursor_seen`` says
+    #: which of the events stamped with it have already been emitted.
     cursor: int = 0
+    #: Comma-separated digests of the events emitted at ``cursor``.
+    cursor_seen: str = ""
     #: ``time.time()`` when the first tick ran; the ``seconds`` budget counts from here.
     started_at: float = 0.0
     events: int = 0
@@ -244,7 +260,13 @@ class JetstreamArgs:
         ),
     ] = 10
     max_events: Annotated[
-        int, Arg("max_events", doc="Stop after this many events (0 = no cap)", default=0, ge=0)
+        int,
+        Arg(
+            "max_events",
+            doc="Stop after this many events, finishing the commit the last one is in (0 = no cap)",
+            default=0,
+            ge=0,
+        ),
     ] = 0
     batch_events: Annotated[
         int,
@@ -276,8 +298,8 @@ def _pushed_time_bounds(params: ProcessParams[Any]) -> tuple[int | None, int | N
     """``(start, stop)`` in microseconds from range predicates on ``event_time`` or ``time_us``.
 
     A lower bound only ever skips events the predicate would drop, so it becomes
-    the replay cursor. An upper bound becomes the stopping rule: ``time_us`` is
-    strictly increasing, so once one event is past it every later one is too.
+    the replay cursor. An upper bound becomes the stopping rule: ``time_us``
+    never decreases, so once one event is past it every later one is too.
     Both columns are the same clock, so their bounds are simply intersected.
     """
     filters = getattr(params, "current_pushdown_filters", None)
@@ -343,7 +365,9 @@ def _socket_for(state: JetstreamState, query: dict[str, Any], batch_seconds: flo
         if pooled is not None:
             pooled.last_used = now
             return pooled.socket
-    resume = state.cursor + 1 if state.cursor else query["start"]
+    # Inclusive: events tied with the last one read may not all have arrived,
+    # and the replayed ones are dropped by digest in `_accept`.
+    resume = state.cursor or query["start"]
     # Failover is only safe for a live read. A cursor is a point on one
     # instance's clock, so resuming it on another could skip or repeat events;
     # failing loudly is better than a poll that is silently not gapless.
@@ -378,6 +402,68 @@ def _socket_for(state: JetstreamState, query: dict[str, Any], batch_seconds: flo
                 )
             return socket
     raise JetstreamUnavailableError(f"could not connect to Jetstream ({', '.join(candidates)}): {failure}")
+
+
+def _parse(message: str | bytes) -> dict[str, Any] | None:
+    """One Jetstream message as an event with an integer ``time_us``, else ``None``."""
+    try:
+        event = json.loads(message)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(event, dict) or not isinstance(event.get("time_us"), int):
+        return None
+    return event
+
+
+def _digest(message: str | bytes) -> str:
+    raw = message.encode() if isinstance(message, str) else message
+    return hashlib.blake2b(raw, digest_size=8).hexdigest()
+
+
+def _accept(state: JetstreamState, message: str | bytes, time_us: int) -> bool:
+    """Advance the cursor past one event; ``False`` if it was already emitted.
+
+    ``time_us`` never decreases but repeats across the ops of one commit, so an
+    event at the cursor is new unless its digest says otherwise — which is what
+    a reconnect, resuming *at* the cursor, replays.
+    """
+    if time_us < state.cursor:
+        return False
+    digest = _digest(message)
+    if time_us == state.cursor:
+        seen = state.cursor_seen.split(",") if state.cursor_seen else []
+        if digest in seen:
+            return False
+        state.cursor_seen = ",".join([*seen, digest])
+    else:
+        state.cursor, state.cursor_seen = time_us, digest
+    state.events += 1
+    return True
+
+
+def _finish_commit(socket: ClientConnection, state: JetstreamState, rows: list[dict[str, Any]]) -> None:
+    """Before a scan stops, take the rest of the commit its last event belongs to.
+
+    The ops of one commit share a ``time_us``, so a scan that stopped between
+    them would hand back a ``time_us`` that cannot be resumed from: ``cursor =>``
+    after it skips the rest of the commit. They arrive back to back, so a short
+    wait for more events at the cursor is enough; the first later one ends it.
+    """
+    if not state.cursor:
+        return
+    end = time.time() + _COMMIT_GRACE_SECONDS
+    while (remaining := end - time.time()) > 0:
+        try:
+            message = socket.recv(timeout=remaining)
+        except (TimeoutError, ConnectionClosed):
+            return
+        event = _parse(message)
+        if event is None:
+            continue
+        if event["time_us"] != state.cursor:
+            return
+        if _accept(state, message, event["time_us"]):
+            rows.append(flatten_jetstream_event(event))
 
 
 JETSTREAM_DOCS = docs(
@@ -437,6 +523,10 @@ JETSTREAM_DOCS = docs(
         "skip nor repeat anything. Each call returns up to `max_events` events or `seconds` of "
         "listening, whichever comes first, so `cursor => <last>, max_events => 1000` is one "
         "page of the stream. A call that finds nothing new returns no rows; keep the old cursor.\n\n"
+        "`time_us` is not unique: every operation of one commit (a post with its threadgate, "
+        "say) is its own event with the same `time_us`. A call never stops partway through a "
+        "commit — it may return a few events past `max_events` to finish one — so the cursor "
+        "stays exact. A `LIMIT` can cut a commit, so page with `max_events`, not `LIMIT`.\n\n"
         "Prefer `cursor =>` over `WHERE time_us > <last>` for this: `max_events` counts events "
         "read *before* any WHERE is applied, so the WHERE form spends one of them on the event "
         "you already have. Cursors are points on one Jetstream instance's clock, so a call with "
@@ -539,6 +629,7 @@ class JetstreamFunction(TableFunctionGenerator[JetstreamArgs, JetstreamState]):
 
         socket = _socket_for(state, query, args.batch_ms / 1000)
         rows: list[dict[str, Any]] = []
+        past_last_commit = False
         tick_end = min(time.time() + args.batch_ms / 1000, deadline)
         while len(rows) < args.batch_events:
             remaining = tick_end - time.time()
@@ -552,27 +643,23 @@ class JetstreamFunction(TableFunctionGenerator[JetstreamArgs, JetstreamState]):
                 # Drop the dead socket; the next tick reconnects from the cursor.
                 _release(state.scan_id)
                 break
-            try:
-                event = json.loads(message)
-            except (ValueError, TypeError):
+            event = _parse(message)
+            if event is None:
                 continue
-            if not isinstance(event, dict):
-                continue
-            time_us = event.get("time_us")
-            if not isinstance(time_us, int) or time_us <= state.cursor:
-                continue  # a replayed overlap after a reconnect
-            if stop_us and time_us > stop_us:
-                state.done = True
+            if stop_us and event["time_us"] > stop_us:
+                state.done = past_last_commit = True
                 break
+            if not _accept(state, message, event["time_us"]):
+                continue  # a replayed overlap after a reconnect
             rows.append(flatten_jetstream_event(event))
-            state.cursor = time_us
-            state.events += 1
             if cap and state.events >= cap:
                 state.done = True
                 break
         if time.time() >= deadline:
             state.done = True
         if state.done:
+            if not past_last_commit:
+                _finish_commit(socket, state, rows)
             _release(state.scan_id)
         else:
             _touch(state.scan_id)

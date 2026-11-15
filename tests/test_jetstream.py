@@ -192,6 +192,14 @@ class TestInitialQuery:
 
 # ---------------------------------------------------------------------------
 # The tick loop
+#: The ops of one multi-op commit, as Jetstream emits them: one event each, one time_us.
+COMMIT_OPS = ["app.bsky.feed.post", "app.bsky.feed.threadgate", "app.bsky.feed.postgate"]
+
+
+def _ops(time_us: int) -> list[dict[str, Any]]:
+    return [_commit(time_us, collection) for collection in COMMIT_OPS]
+
+
 # ---------------------------------------------------------------------------
 
 
@@ -278,13 +286,39 @@ class TestTickLoop:
         out, state = _run(params)
         assert _times(out) == [US0, US0 + 1, US1] and state.done
 
-    def test_a_reconnect_resumes_after_the_cursor_and_drops_the_overlap(self, sockets: _Sockets) -> None:
+    def test_a_reconnect_resumes_at_the_cursor_and_drops_the_overlap(self, sockets: _Sockets) -> None:
         sockets.queue.append(_FakeSocket([_commit(t) for t in (10, 11, 12)], drop_after=3))
-        # Jetstream replays from the cursor, so the new socket repeats 12 before moving on.
+        # Jetstream's cursor is inclusive, so the new socket repeats 12 before moving on.
         sockets.queue.append(_FakeSocket([_commit(t) for t in (12, 13, 14)]))
         out, _state = _run(_Params(args=JetstreamArgs(max_events=5, batch_ms=50)))
         assert _times(out) == [10, 11, 12, 13, 14]
-        assert "cursor=13" in sockets[1][0]
+        assert "cursor=12" in sockets[1][0]
+
+    def test_every_op_of_a_commit_is_kept(self, sockets: _Sockets) -> None:
+        """The ops of one commit share a time_us; none of them is a duplicate."""
+        sockets.queue.append(_FakeSocket([_commit(1), *_ops(2), _commit(3)]))
+        out, _state = _run(_Params(args=JetstreamArgs(max_events=5, batch_ms=50)))
+        assert _times(out) == [1, 2, 2, 2, 3]
+
+    def test_a_reconnect_inside_a_commit_loses_and_repeats_nothing(self, sockets: _Sockets) -> None:
+        sockets.queue.append(_FakeSocket([_commit(1), *_ops(2)[:2]], drop_after=3))
+        sockets.queue.append(_FakeSocket([*_ops(2), _commit(3)]))
+        out, _state = _run(_Params(args=JetstreamArgs(max_events=5, batch_ms=50)))
+        assert _times(out) == [1, 2, 2, 2, 3]
+        assert [r["collection"] for b in out.batches for r in b.to_pylist()][1:4] == COMMIT_OPS
+        assert "cursor=2" in sockets[1][0]
+
+    def test_max_events_finishes_the_commit_it_stopped_in(self, sockets: _Sockets) -> None:
+        """So the last time_us is a cursor that resumes without skipping the commit's other ops."""
+        sockets.queue.append(_FakeSocket([_commit(1), *_ops(2), _commit(3)]))
+        out, state = _run(_Params(args=JetstreamArgs(max_events=2, batch_ms=50)))
+        assert _times(out) == [1, 2, 2, 2] and state.done and state.cursor == 2
+
+    def test_an_upper_time_bound_keeps_every_op_at_the_bound(self, sockets: _Sockets) -> None:
+        sockets.queue.append(_FakeSocket([_commit(US0), *_ops(US1), _commit(US1 + 1)]))
+        params = _Params(current_pushdown_filters=_Filters(bounds={"time_us": (None, US1)}))
+        out, state = _run(params)
+        assert _times(out) == [US0, US1, US1, US1] and state.done
 
     def test_batches_close_at_batch_events(self, sockets: _Sockets) -> None:
         """One socket serves every tick, and each batch holds at most batch_events."""

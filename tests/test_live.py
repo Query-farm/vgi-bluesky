@@ -7,6 +7,8 @@ what says which assumption broke. Opt in with ``pytest -m live``.
 
 from __future__ import annotations
 
+import itertools
+
 import httpx
 import pytest
 
@@ -101,29 +103,60 @@ class TestJetstream:
     """The Jetstream behaviours jetstream() is built on."""
 
     @staticmethod
-    def _read(url: str, n: int, seconds: float = 8.0) -> list[dict]:
+    def _read_raw(url: str, n: int, seconds: float = 8.0) -> list[str | bytes]:
         import contextlib
-        import json
         import time
 
         from websockets.sync.client import connect
 
-        events: list[dict] = []
+        messages: list[str | bytes] = []
         deadline = time.time() + seconds
         with connect(url, open_timeout=10, close_timeout=0.5, max_size=None) as socket:
-            while len(events) < n and time.time() < deadline:
+            while len(messages) < n and time.time() < deadline:
                 with contextlib.suppress(TimeoutError):
-                    events.append(json.loads(socket.recv(timeout=1)))
-        return events
+                    messages.append(socket.recv(timeout=1))
+        return messages
 
-    def test_time_us_is_strictly_increasing(self) -> None:
-        """Why an upper bound on event_time is a safe stopping rule."""
+    @classmethod
+    def _read(cls, url: str, n: int, seconds: float = 8.0) -> list[dict]:
+        import json
+
+        return [json.loads(m) for m in cls._read_raw(url, n, seconds)]
+
+    def test_time_us_never_decreases_and_ties_are_one_commit(self) -> None:
+        """Why an upper bound on event_time is a safe stopping rule, and why time_us is not unique.
+
+        Every op of a multi-op commit is its own event stamped with the commit's
+        time_us, so ties are expected (1-7% of adjacent pairs) — but only within
+        one commit, and the clock never steps back.
+        """
         from vgi_bluesky.jetstream import JETSTREAM_HOSTS, subscribe_url
 
         events = self._read(subscribe_url(JETSTREAM_HOSTS[0], collections=[], dids=[], cursor=0), 500)
-        times = [e["time_us"] for e in events]
-        assert len(times) > 100
-        assert all(a < b for a, b in zip(times, times[1:], strict=False))
+        assert len(events) > 100
+        for a, b in itertools.pairwise(events):
+            assert a["time_us"] <= b["time_us"]
+            if a["time_us"] == b["time_us"]:
+                assert a["did"] == b["did"]
+
+    def test_replay_from_a_tie_repeats_the_whole_commit(self) -> None:
+        """A reconnect resumes *at* the cursor and drops what it already has by content."""
+        import collections
+        import json
+        import time
+
+        from vgi_bluesky.jetstream import JETSTREAM_HOSTS, subscribe_url
+
+        start = int((time.time() - 300) * 1_000_000)
+        raw = self._read_raw(subscribe_url(JETSTREAM_HOSTS[0], collections=[], dids=[], cursor=start), 2000)
+        counts = collections.Counter(json.loads(m)["time_us"] for m in raw)
+        tie = next((t for t, n in counts.items() if n > 1), None)
+        assert tie is not None, "no multi-op commit in 2000 events"
+        group = [m for m in raw if json.loads(m)["time_us"] == tie]
+        replay = self._read_raw(
+            subscribe_url(JETSTREAM_HOSTS[0], collections=[], dids=[], cursor=tie), len(group)
+        )
+        assert replay == group
 
     def test_a_collection_filter_is_a_superset(self) -> None:
         """Only commits are filtered; nothing of the wanted collection is withheld."""

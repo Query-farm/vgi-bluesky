@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `jetstream` dropped every operation after the first of a multi-op commit
+  (a post's threadgate and postgate, say): it treated `time_us` as unique, but
+  Jetstream stamps all the ops of one commit with the same `time_us` — 1–7% of
+  events. Reconnects now resume *at* the cursor and drop replayed events by
+  content, and a scan ended by `max_events` or `seconds` finishes the commit
+  it is in, so `cursor => <last time_us>` still resumes without a gap.
+
 ## 0.4.0
 
 ### Changed
