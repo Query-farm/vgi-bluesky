@@ -1,0 +1,63 @@
+{
+  "baseline": "eae45012647d936cc7deadeb48e115e246ce4744",
+  "meaning": "Original analytical SQL statements unchanged after whitespace normalization; ATTACH alone migrated to clean released launch. Original displayed tables and original fixture bytes are identical. Heading levels, setup explanation and explicitly disclosed independent visual scales updated; changed narrative recorded below. Four frozen companions match published manifest.",
+  "original_sql_cells_preserved": [
+    "387e5a31",
+    "9e74ff82",
+    "6d1d8bca",
+    "cde6f7c3",
+    "7f680c4a",
+    "83a4692b",
+    "784845e8"
+  ],
+  "markdown_narrative_cells_preserved": [
+    "67afe3fa",
+    "8d031087",
+    "01e18ca3",
+    "0cfc652b",
+    "22670787",
+    "a4c80309",
+    "dfec1416"
+  ],
+  "markdown_cells_updated": [
+    {
+      "cell": "e52e6e63",
+      "before": "Attach the pinned worker The literal Git launcher resolves a published revision independently of this checkout. Replay uses the worker\u2019s supported `BLUESKY_APPVIEW_URL` override and a loopback companion that serves only the recorded request. Live mode clears endpoint overrides and calls the normal public service. No login or write operation is involved.",
+      "after": "Attach the released worker The literal Git launcher resolves a published release independently of this checkout. Replay uses the worker\u2019s supported `BLUESKY_APPVIEW_URL` override and a loopback companion that serves only the recorded request. Live mode clears endpoint overrides and calls the normal public service. No login or write operation is involved."
+    }
+  ],
+  "saved_html_tables": [
+    {
+      "cell": "387e5a31",
+      "tables": 1,
+      "identical": true
+    },
+    {
+      "cell": "9e74ff82",
+      "tables": 1,
+      "identical": true
+    },
+    {
+      "cell": "6d1d8bca",
+      "tables": 1,
+      "identical": true
+    },
+    {
+      "cell": "4f013b57",
+      "tables": 1,
+      "identical": true
+    },
+    {
+      "cell": "d7b9c866",
+      "tables": 1,
+      "identical": true
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "notebooks/data/official-feed.json",
+      "sha256": "9c67bc977a9cb8faf04ff425a18e85df6139b620076360eb7ed7cf8fba8bd690"
+    }
+  ],
+  "frozen_companions_verified": 4
+}

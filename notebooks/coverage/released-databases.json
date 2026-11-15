@@ -1,0 +1,49 @@
+{
+  "query": "SELECT * FROM duckdb_databases() WHERE database_name='bluesky'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "path",
+    "comment",
+    "tags",
+    "internal",
+    "type",
+    "readonly",
+    "encrypted",
+    "cipher",
+    "options"
+  ],
+  "rows": [
+    [
+      "bluesky",
+      22595,
+      null,
+      "Read-only Bluesky data: posts, threads, profiles, followers, likes, feeds and trending topics",
+      {
+        "domain": "social-media",
+        "provider": "bluesky",
+        "vgi.agent_test_tasks": "[{\"name\": \"whats_trending\", \"prompt\": \"What are the top five things trending on Bluesky right now?\"}, {\"name\": \"account_size\", \"prompt\": \"How many followers does the Bluesky account bsky.app have?\"}, {\"name\": \"own_posts_only\", \"prompt\": \"Show the ten most recent posts the account bsky.app wrote itself \\u2014 not things it reposted.\"}, {\"name\": \"topic_search\", \"prompt\": \"Find recent Bluesky posts about DuckDB and who wrote them.\"}, {\"name\": \"best_reply\", \"prompt\": \"What is the most-liked reply to bsky.app's most recent original post?\"}, {\"name\": \"commentary\", \"prompt\": \"What did people say when they quote-posted the post bsky.app has pinned to its profile?\"}, {\"name\": \"enrich_search_results\", \"prompt\": \"Find accounts about DuckDB on Bluesky and rank the first twenty by how many followers they have.\"}, {\"name\": \"read_discover\", \"prompt\": \"What is Bluesky's own Discover feed showing right now?\"}, {\"name\": \"recent_followers\", \"prompt\": \"Who are the ten most recent accounts to follow bsky.app on Bluesky?\"}, {\"name\": \"who_they_follow\", \"prompt\": \"Which accounts does bsky.app follow? List a few by handle.\"}, {\"name\": \"who_liked_it\", \"prompt\": \"Which accounts most recently liked the post bsky.app has pinned to its profile, and when?\"}, {\"name\": \"who_boosted_it\", \"prompt\": \"Which accounts reposted the post bsky.app has pinned to its profile?\"}, {\"name\": \"post_engagement\", \"prompt\": \"Given the post https://bsky.app/profile/bsky.app/post/3mw2cdr44fc2a, how many likes, reposts and replies does it have right now?\"}, {\"name\": \"find_a_feed\", \"prompt\": \"Which are the most popular Bluesky custom feeds about science?\"}, {\"name\": \"an_accounts_feeds\", \"prompt\": \"Which custom feeds has the bsky.app account published, and how many likes does each have?\"}, {\"name\": \"trends_by_category\", \"prompt\": \"Group what is trending on Bluesky right now by category, with the post count for each.\"}, {\"name\": \"live_languages\", \"prompt\": \"Which languages are people posting in on Bluesky right now, across the whole network?\"}]",
+        "vgi.author": "Query Farm LLC <hello@query.farm>",
+        "vgi.copyright": "Worker (c) 2026 Query Farm LLC - https://query.farm. Posts and profiles are their authors' own, served by Bluesky Social PBC under Bluesky's terms of service.",
+        "vgi.doc_llm": "Public data from Bluesky, the AT Protocol social network: posts, threads, profiles, the follow graph, likes, reposts, quotes, custom feeds and trending topics. Reach for this catalog to find out what people are saying about a topic, how an account or a post is performing, or what is trending. Start from `trends` or `search_posts()` for a topic, `profile()` or `search_actors()` for an account. Read-only and public: no credentials, no account, no posting.",
+        "vgi.doc_md": "Bluesky is a decentralised social network built on the AT Protocol. This catalog reads its public AppView \u2014 the service that indexes the whole network \u2014 and returns what it serves as ordinary tables.\n\n### Identifiers\n\n- **Actors** are accounts. Each has a permanent `did` (`did:plc:...`) and a `handle` (`bsky.app`) that it can change. Every function taking an actor accepts either, as well as `@handle` or a pasted `https://bsky.app/profile/...` URL. Join and store on `did`.\n- **Posts** are addressed by AT-URI, `at://<did>/app.bsky.feed.post/<rkey>`. Functions taking a post also accept the `https://bsky.app/profile/<handle>/post/<rkey>` URL the app shows.\n\n### Timestamps\n\n`created_at` on a post is what the author's app claimed and can be backdated; `indexed_at` is when Bluesky first saw it, and is the one to trust for ordering.\n\n### Access and limits\n\nNo credentials are needed and none are accepted. Bluesky rate-limits anonymous traffic per IP; requests are retried with backoff, and the AppView's own 30-second `Cache-Control` is forwarded to the result cache, so repeating a query within half a minute is free.",
+        "vgi.executable_examples": "[{\"name\": \"trends_are_ranked_from_one\", \"description\": \"The trends table is populated and ranked from 1.\", \"sql\": \"SELECT min(rank) = 1 AND count(*) > 0 FROM bluesky.main.trends\", \"expected_result\": [[true]]}, {\"name\": \"trends_and_scan_function_agree\", \"description\": \"The `trends` table and the `all_trends` function behind it have the same shape.\", \"sql\": \"SELECT (SELECT count(*) FROM bluesky.main.trends) > 0 AND (SELECT count(*) FROM bluesky.main.all_trends()) > 0\", \"expected_result\": [[true]]}, {\"name\": \"profile_resolves_a_handle_to_its_did\", \"description\": \"A handle resolves to the account's permanent DID.\", \"sql\": \"SELECT did FROM bluesky.main.profile('bsky.app')\", \"expected_result\": [[\"did:plc:z72i7hdynmk6r22z27h6tvur\"]]}, {\"name\": \"profile_accepts_a_web_url\", \"description\": \"A pasted bsky.app profile URL is accepted as an actor.\", \"sql\": \"SELECT handle FROM bluesky.main.profile('https://bsky.app/profile/bsky.app')\", \"expected_result\": [[\"bsky.app\"]]}, {\"name\": \"author_feed_is_the_authors\", \"description\": \"Without reposts, an author feed holds only that author's posts.\", \"sql\": \"SELECT bool_and(author_handle = 'bsky.app') FROM (SELECT author_handle FROM bluesky.main.author_feed('bsky.app') WHERE reason IS NULL LIMIT 50)\", \"expected_result\": [[true]]}, {\"name\": \"a_limit_stops_the_scan_early\", \"description\": \"A paged scan over an account with millions of followers yields its first rows without walking every page.\", \"sql\": \"SELECT count(*) FROM (SELECT did FROM bluesky.main.followers('bsky.app') LIMIT 5)\", \"expected_result\": [[5]]}, {\"name\": \"jetstream_delivers_live_events\", \"description\": \"A few seconds of the firehose always holds events; the network never goes quiet.\", \"sql\": \"SELECT count(*) > 0 FROM bluesky.main.jetstream(seconds => 3)\", \"expected_result\": [[true]]}, {\"name\": \"jetstream_collection_filter_holds\", \"description\": \"A collection filter keeps only that record type among commits.\", \"sql\": \"SELECT bool_and(collection = 'app.bsky.feed.post') FROM bluesky.main.jetstream(collections => 'app.bsky.feed.post', seconds => 3) WHERE kind = 'commit'\", \"expected_result\": [[true]]}, {\"name\": \"thread_anchor_is_depth_zero\", \"description\": \"A thread always contains the anchor post, at depth 0.\", \"sql\": \"SELECT count(*) FROM bluesky.main.thread((SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') WHERE reason IS NULL LIMIT 1), depth => 0) WHERE depth = 0\", \"expected_result\": [[1]]}]",
+        "vgi.keywords": "[\"bluesky\", \"atproto\", \"social media\", \"posts\", \"followers\", \"trending\", \"feeds\", \"search\", \"firehose\", \"jetstream\"]",
+        "vgi.license": "MIT",
+        "vgi.source_url": "https://github.com/Query-farm/vgi-bluesky",
+        "vgi.subtitle": "Query Bluesky posts, threads, profiles, followers, feeds, trending topics and the live firehose.",
+        "vgi.support_contact": "https://github.com/Query-farm/vgi-bluesky/issues",
+        "vgi.support_policy_url": "https://github.com/Query-farm/vgi-bluesky/blob/main/README.md",
+        "vgi.title": "Bluesky Social"
+      },
+      false,
+      "vgi",
+      false,
+      false,
+      null,
+      {
+        "location": "uvx --from git+https://github.com/Query-farm/vgi-bluesky@v0.4.0 vgi-bluesky"
+      }
+    ]
+  ]
+}

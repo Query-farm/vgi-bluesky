@@ -328,7 +328,7 @@ about 10 seconds.
 
 ## Notebooks
 
-[Explore the executed feed-distribution notebook](notebooks/README.md) to compare typical likes and concentration with recorded public data and an explicit live mode.
+[Explore two executed SQL stories](notebooks/README.md): recorded post distributions and explicitly synthetic engagement populations, with focused experiments, GitHub charts and Colab setup.
 
 ## Development
 

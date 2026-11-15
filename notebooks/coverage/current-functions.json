@@ -1,0 +1,659 @@
+{
+  "query": "SELECT * FROM duckdb_functions() WHERE database_name='bluesky'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "function_name",
+    "alias_of",
+    "function_type",
+    "description",
+    "comment",
+    "tags",
+    "return_type",
+    "parameters",
+    "parameter_types",
+    "varargs",
+    "macro_definition",
+    "has_side_effects",
+    "internal",
+    "extension_name",
+    "function_oid",
+    "examples",
+    "stability",
+    "categories"
+  ],
+  "rows": [
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "search_actors",
+      null,
+      "table",
+      "Search Bluesky accounts by handle, display name and bio",
+      null,
+      {
+        "vgi.category": "actors",
+        "vgi.doc_llm": "Find accounts by name or topic. Matches handles, display names and bios, and returns them in Bluesky's relevance order. This is how to get from a name to a `did` or `handle` when you do not already know it; feed that into `profile()` for counts or `author_feed()` for posts.",
+        "vgi.doc_md": "Account search, in Bluesky's own relevance order.\n\n### Streaming\n\nRows arrive one API page (100 accounts) at a time, so a `LIMIT` stops early. The cost is that this cannot be the inner side of a correlated `LATERAL` \u2014 drive a join from it, not into it.\n\n### Counts are not here\n\nSearch returns the basic actor view, which carries no follower counts. Join to `profile()` under a LATERAL to add them.",
+        "vgi.example_queries": "[{\"description\": \"Accounts that talk about DuckDB\", \"sql\": \"SELECT handle, display_name, description FROM bluesky.main.search_actors('duckdb') LIMIT 20\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"did\", \"type\": \"VARCHAR\", \"description\": \"Permanent account identifier (DID); stable across handle changes.\"}, {\"name\": \"handle\", \"type\": \"VARCHAR\", \"description\": \"Current handle, e.g. 'bsky.app'. Can change; 'handle.invalid' means its DNS/HTTP proof failed.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"Free-form display name the account chose.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"Profile bio text.\"}, {\"name\": \"avatar_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the avatar image.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the account's profile was created.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView last indexed this profile.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the account, e.g. '!no-unauthenticated'.\"}, {\"name\": \"profile_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the profile in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "query"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22612,
+      [
+        "SELECT handle, display_name, description FROM bluesky.main.search_actors('duckdb') LIMIT 20"
+      ],
+      null,
+      [
+        "actors"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "reposted_by",
+      null,
+      "table",
+      "Accounts that reposted a Bluesky post",
+      null,
+      {
+        "vgi.category": "interactions",
+        "vgi.doc_llm": "Who reposted (boosted) a post. Reach for this to see who spread a post to their own followers. The endpoint does not timestamp reposts, so `interacted_at` is NULL. For just the total, use `post().repost_count`; for quote posts, `quotes()`.",
+        "vgi.doc_md": "Accounts that reposted the given post.\n\n### The post must be a literal\n\nPass the post as a literal AT-URI or bsky.app URL. DuckDB does not accept a subquery as this function's argument, and because it streams it cannot be the inner side of a `LATERAL` either \u2014 look the URI up first, then call this with it.\n\n### Streaming\n\nRows arrive 100 at a time, most recent first, so a `LIMIT` stops early. For just the number, `post()` already carries the count.",
+        "vgi.example_queries": "[{\"description\": \"Who reposted bsky.app's pinned welcome post\", \"sql\": \"SELECT handle, display_name FROM bluesky.main.reposted_by('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') LIMIT 50\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"subject_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post that was liked or reposted.\"}, {\"name\": \"interacted_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the like was made. NULL for reposts, which the endpoint does not timestamp.\"}, {\"name\": \"did\", \"type\": \"VARCHAR\", \"description\": \"Permanent account identifier (DID); stable across handle changes.\"}, {\"name\": \"handle\", \"type\": \"VARCHAR\", \"description\": \"Current handle, e.g. 'bsky.app'. Can change; 'handle.invalid' means its DNS/HTTP proof failed.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"Free-form display name the account chose.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"Profile bio text.\"}, {\"name\": \"avatar_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the avatar image.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the account's profile was created.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView last indexed this profile.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the account, e.g. '!no-unauthenticated'.\"}, {\"name\": \"profile_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the profile in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "uri"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22611,
+      [
+        "SELECT handle, display_name FROM bluesky.main.reposted_by('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') LIMIT 50"
+      ],
+      null,
+      [
+        "interactions"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "quotes",
+      null,
+      "table",
+      "Posts quoting a Bluesky post, most recent first",
+      null,
+      {
+        "vgi.category": "interactions",
+        "vgi.doc_llm": "Every post that quotes a given post, with its text and engagement. Reach for this to see what people said *about* a post, as opposed to replies (use `thread()`) or plain reposts (use `reposted_by()`). Each row's `quoted_uri` is the input post.",
+        "vgi.doc_md": "Quote posts of the given post, as full post rows.\n\n### The post must be a literal\n\nPass the post as a literal AT-URI or bsky.app URL. DuckDB does not accept a subquery as this function's argument, and because it streams it cannot be the inner side of a `LATERAL` either \u2014 look the URI up first, then call this with it.\n\n### Streaming\n\nRows arrive 100 at a time, most recent first, so a `LIMIT` stops early. For just the number, `post()` already carries the count.",
+        "vgi.example_queries": "[{\"description\": \"The most-liked quotes of bsky.app's pinned welcome post\", \"sql\": \"SELECT author_handle, text, like_count FROM bluesky.main.quotes('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') ORDER BY like_count DESC LIMIT 20\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post (at://<did>/app.bsky.feed.post/<rkey>); the key post() and thread() take.\"}, {\"name\": \"cid\", \"type\": \"VARCHAR\", \"description\": \"Content hash of this exact version of the post record.\"}, {\"name\": \"author_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the author.\"}, {\"name\": \"author_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of the author at the time of the query.\"}, {\"name\": \"author_display_name\", \"type\": \"VARCHAR\", \"description\": \"Display name of the author.\"}, {\"name\": \"text\", \"type\": \"VARCHAR\", \"description\": \"The post's text.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the author's client says the post was written. Client-supplied, so it can be backdated; NULL when unrepresentable.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView first saw the post \\u2014 the trustworthy clock.\"}, {\"name\": \"langs\", \"type\": \"VARCHAR[]\", \"description\": \"BCP-47 language tags the author's client declared, e.g. ['en'].\"}, {\"name\": \"reply_count\", \"type\": \"BIGINT\", \"description\": \"Replies to this post.\"}, {\"name\": \"repost_count\", \"type\": \"BIGINT\", \"description\": \"Reposts of this post.\"}, {\"name\": \"like_count\", \"type\": \"BIGINT\", \"description\": \"Likes of this post.\"}, {\"name\": \"quote_count\", \"type\": \"BIGINT\", \"description\": \"Quote posts of this post.\"}, {\"name\": \"bookmark_count\", \"type\": \"BIGINT\", \"description\": \"Times this post has been bookmarked.\"}, {\"name\": \"reply_parent_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post this replies to; NULL for a top-level post.\"}, {\"name\": \"reply_root_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the first post in the thread this reply belongs to.\"}, {\"name\": \"embed_type\", \"type\": \"VARCHAR\", \"description\": \"What is attached: 'images', 'video', 'external' (link card), 'record' (quote post), 'recordWithMedia', or NULL for plain text.\"}, {\"name\": \"quoted_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the quoted post or feed, when this is a quote post.\"}, {\"name\": \"external_url\", \"type\": \"VARCHAR\", \"description\": \"URL of the attached link card, when there is one.\"}, {\"name\": \"image_count\", \"type\": \"BIGINT\", \"description\": \"Number of attached images (0 when none).\"}, {\"name\": \"hashtags\", \"type\": \"VARCHAR[]\", \"description\": \"Hashtags in the text or the post's tag list, without the '#'.\"}, {\"name\": \"mentions\", \"type\": \"VARCHAR[]\", \"description\": \"DIDs of accounts mentioned in the text.\"}, {\"name\": \"links\", \"type\": \"VARCHAR[]\", \"description\": \"URLs linked from the text.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the post.\"}, {\"name\": \"post_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the post in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "uri"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22610,
+      [
+        "SELECT author_handle, text, like_count FROM bluesky.main.quotes('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') ORDER BY like_count DESC LIMIT 20"
+      ],
+      null,
+      [
+        "interactions"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "popular_feeds",
+      null,
+      "table",
+      "Bluesky custom feeds by popularity, optionally searched by name",
+      null,
+      {
+        "vgi.category": "feeds",
+        "vgi.doc_llm": "Discover custom feeds: the most popular ones overall, or those matching `query => '...'`. Reach for this to find a feed's `uri` to pass to `feed()`.",
+        "vgi.doc_md": "Feed generators in Bluesky's popularity order, or matching a search when `query` is given.\n\n### Streaming\n\nRows arrive 100 at a time, so a `LIMIT` stops early.",
+        "vgi.example_queries": "[{\"description\": \"The most popular custom feeds\", \"sql\": \"SELECT display_name, creator_handle, like_count FROM bluesky.main.popular_feeds() LIMIT 25\"}, {\"description\": \"Feeds about science\", \"sql\": \"SELECT display_name, description, uri FROM bluesky.main.popular_feeds(query => 'science') LIMIT 25\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the feed (at://<did>/app.bsky.feed.generator/<rkey>); the key feed() takes.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"The feed's name as shown in the app.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"What the feed says it shows.\"}, {\"name\": \"creator_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the account that published the feed.\"}, {\"name\": \"creator_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of that account.\"}, {\"name\": \"service_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the service that computes the feed's contents.\"}, {\"name\": \"like_count\", \"type\": \"BIGINT\", \"description\": \"Likes of the feed itself \\u2014 the usual popularity measure.\"}, {\"name\": \"accepts_interactions\", \"type\": \"BOOLEAN\", \"description\": \"Whether the feed accepts 'show more/less like this' feedback.\"}, {\"name\": \"content_mode\", \"type\": \"VARCHAR\", \"description\": \"Declared content mode, e.g. video-only, when the feed sets one.\"}, {\"name\": \"avatar_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the feed's avatar image.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView last indexed the feed's declaration.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the feed.\"}, {\"name\": \"feed_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the feed in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "query"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22607,
+      [
+        "SELECT display_name, creator_handle, like_count FROM bluesky.main.popular_feeds() LIMIT 25"
+      ],
+      null,
+      [
+        "feeds"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "profile",
+      null,
+      "table",
+      "One Bluesky account's profile and follower counts, by handle or DID",
+      null,
+      {
+        "vgi.category": "actors",
+        "vgi.doc_llm": "The full profile of one account \u2014 bio, follower/following/post counts, and verification \u2014 by handle or DID. Reach for this to size up an account or to turn a handle into the permanent `did`. It composes under a correlated LATERAL, so it enriches the actors any other function returns with their counts.",
+        "vgi.doc_md": "One row per account that exists; an unknown or deleted account returns no row rather than an error.\n\n### Handles versus DIDs\n\nA handle (`bsky.app`) is a DNS name the account can change at any time; the `did` is permanent. Store and join on `did`. The `actor` column echoes the input exactly, so a LATERAL can still be matched back to what was passed in.\n\n### Cost under LATERAL\n\nProfiles are fetched 25 per request, so a LATERAL over 100 actors is four calls, not a hundred. Results are cached for the 30 seconds the AppView declares.",
+        "vgi.example_queries": "[{\"description\": \"The official Bluesky account's counts\", \"sql\": \"SELECT handle, display_name, followers_count, follows_count, posts_count FROM bluesky.main.profile('bsky.app')\"}, {\"description\": \"Follower counts for every account a search finds, via LATERAL\", \"sql\": \"SELECT p.handle, p.followers_count FROM (SELECT did FROM bluesky.main.search_actors('duckdb') LIMIT 20) a, LATERAL bluesky.main.profile(a.did) p ORDER BY p.followers_count DESC\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"actor\", \"type\": \"VARCHAR\", \"description\": \"The actor exactly as it was passed in \\u2014 a handle, DID or profile URL \\u2014 so a LATERAL can join back on its input.\"}, {\"name\": \"did\", \"type\": \"VARCHAR\", \"description\": \"Permanent account identifier (DID); stable across handle changes.\"}, {\"name\": \"handle\", \"type\": \"VARCHAR\", \"description\": \"Current handle, e.g. 'bsky.app'. Can change; 'handle.invalid' means its DNS/HTTP proof failed.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"Free-form display name the account chose.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"Profile bio text.\"}, {\"name\": \"avatar_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the avatar image.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the account's profile was created.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView last indexed this profile.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the account, e.g. '!no-unauthenticated'.\"}, {\"name\": \"profile_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the profile in the Bluesky web app.\"}, {\"name\": \"banner_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the profile banner image.\"}, {\"name\": \"pronouns\", \"type\": \"VARCHAR\", \"description\": \"Pronouns the account lists on its profile.\"}, {\"name\": \"website\", \"type\": \"VARCHAR\", \"description\": \"Website the account lists on its profile.\"}, {\"name\": \"followers_count\", \"type\": \"BIGINT\", \"description\": \"Accounts following this one.\"}, {\"name\": \"follows_count\", \"type\": \"BIGINT\", \"description\": \"Accounts this one follows.\"}, {\"name\": \"posts_count\", \"type\": \"BIGINT\", \"description\": \"Posts this account has made (including replies).\"}, {\"name\": \"lists_count\", \"type\": \"BIGINT\", \"description\": \"Lists this account has created.\"}, {\"name\": \"feeds_count\", \"type\": \"BIGINT\", \"description\": \"Custom feeds this account has published.\"}, {\"name\": \"starter_packs_count\", \"type\": \"BIGINT\", \"description\": \"Starter packs this account has created.\"}, {\"name\": \"is_labeler\", \"type\": \"BOOLEAN\", \"description\": \"Whether this account runs a moderation labeling service.\"}, {\"name\": \"verified_status\", \"type\": \"VARCHAR\", \"description\": \"Bluesky's blue-check verification state: 'valid', 'invalid' or 'none'.\"}]"
+      },
+      null,
+      [
+        "actor"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22609,
+      [
+        "SELECT handle, display_name, followers_count, follows_count, posts_count FROM bluesky.main.profile('bsky.app')"
+      ],
+      null,
+      [
+        "actors",
+        "blended"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "actor_feeds",
+      null,
+      "table",
+      "Custom feeds a Bluesky account has published",
+      null,
+      {
+        "vgi.category": "feeds",
+        "vgi.doc_llm": "The custom feeds one account has published. Reach for this when you know who runs a feed but not its URI; pass the `uri` to `feed()` to read it.",
+        "vgi.doc_md": "Feed generators published by the given account. Most accounts publish none, so an empty result is normal.",
+        "vgi.example_queries": "[{\"description\": \"Feeds published by the official Bluesky account\", \"sql\": \"SELECT display_name, description, like_count, uri FROM bluesky.main.actor_feeds('bsky.app')\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the feed (at://<did>/app.bsky.feed.generator/<rkey>); the key feed() takes.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"The feed's name as shown in the app.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"What the feed says it shows.\"}, {\"name\": \"creator_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the account that published the feed.\"}, {\"name\": \"creator_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of that account.\"}, {\"name\": \"service_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the service that computes the feed's contents.\"}, {\"name\": \"like_count\", \"type\": \"BIGINT\", \"description\": \"Likes of the feed itself \\u2014 the usual popularity measure.\"}, {\"name\": \"accepts_interactions\", \"type\": \"BOOLEAN\", \"description\": \"Whether the feed accepts 'show more/less like this' feedback.\"}, {\"name\": \"content_mode\", \"type\": \"VARCHAR\", \"description\": \"Declared content mode, e.g. video-only, when the feed sets one.\"}, {\"name\": \"avatar_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the feed's avatar image.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView last indexed the feed's declaration.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the feed.\"}, {\"name\": \"feed_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the feed in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "actor"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22599,
+      [
+        "SELECT display_name, description, like_count, uri FROM bluesky.main.actor_feeds('bsky.app')"
+      ],
+      null,
+      [
+        "feeds"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "likes",
+      null,
+      "table",
+      "Accounts that liked a Bluesky post, most recent first",
+      null,
+      {
+        "vgi.category": "interactions",
+        "vgi.doc_llm": "Who liked a post, and when. Reach for this to see the audience a post reached or how quickly it was liked. `interacted_at` is the time of each like. For just the total, use `post().like_count`.",
+        "vgi.doc_md": "Accounts that liked the given post.\n\n### The post must be a literal\n\nPass the post as a literal AT-URI or bsky.app URL. DuckDB does not accept a subquery as this function's argument, and because it streams it cannot be the inner side of a `LATERAL` either \u2014 look the URI up first, then call this with it.\n\n### Streaming\n\nRows arrive 100 at a time, most recent first, so a `LIMIT` stops early. For just the number, `post()` already carries the count.",
+        "vgi.example_queries": "[{\"description\": \"Who most recently liked bsky.app's pinned welcome post\", \"sql\": \"SELECT handle, interacted_at FROM bluesky.main.likes('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') LIMIT 50\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"subject_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post that was liked or reposted.\"}, {\"name\": \"interacted_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the like was made. NULL for reposts, which the endpoint does not timestamp.\"}, {\"name\": \"did\", \"type\": \"VARCHAR\", \"description\": \"Permanent account identifier (DID); stable across handle changes.\"}, {\"name\": \"handle\", \"type\": \"VARCHAR\", \"description\": \"Current handle, e.g. 'bsky.app'. Can change; 'handle.invalid' means its DNS/HTTP proof failed.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"Free-form display name the account chose.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"Profile bio text.\"}, {\"name\": \"avatar_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the avatar image.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the account's profile was created.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView last indexed this profile.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the account, e.g. '!no-unauthenticated'.\"}, {\"name\": \"profile_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the profile in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "uri"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22606,
+      [
+        "SELECT handle, interacted_at FROM bluesky.main.likes('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3l6oveex3ii2l') LIMIT 50"
+      ],
+      null,
+      [
+        "interactions"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "post",
+      null,
+      "table",
+      "One Bluesky post with its current like, repost and reply counts",
+      null,
+      {
+        "vgi.category": "posts",
+        "vgi.doc_llm": "A single post's text, author and live engagement counts, by AT-URI or bsky.app URL. Reach for this to check how a known post is doing, or to hydrate URIs that another query produced \u2014 the `quoted_uri` and `reply_parent_uri` columns, say. It composes under a correlated LATERAL.",
+        "vgi.doc_md": "One row per post that exists; a deleted or unknown post returns no row.\n\n### Accepted references\n\nEither the AT-URI (`at://did:plc:.../app.bsky.feed.post/3k...`) or the web URL the app shows (`https://bsky.app/profile/<handle>/post/<rkey>`). A handle is resolved to its DID first, because the batch endpoint behind this answers HTTP 500 to a handle-based URI.\n\n### Cost under LATERAL\n\nPosts are fetched 25 per request.",
+        "vgi.example_queries": "[{\"description\": \"Engagement on the official account's latest post\", \"sql\": \"SELECT text, like_count, repost_count, reply_count FROM bluesky.main.post((SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') WHERE reason IS NULL LIMIT 1))\"}, {\"description\": \"Hydrate the posts that search results are quoting\", \"sql\": \"SELECT q.author_handle, q.text, q.like_count FROM (SELECT quoted_uri FROM bluesky.main.search_posts('duckdb') WHERE quoted_uri LIKE '%app.bsky.feed.post%' LIMIT 25) s, LATERAL bluesky.main.post(s.quoted_uri) q\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post (at://<did>/app.bsky.feed.post/<rkey>); the key post() and thread() take.\"}, {\"name\": \"cid\", \"type\": \"VARCHAR\", \"description\": \"Content hash of this exact version of the post record.\"}, {\"name\": \"author_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the author.\"}, {\"name\": \"author_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of the author at the time of the query.\"}, {\"name\": \"author_display_name\", \"type\": \"VARCHAR\", \"description\": \"Display name of the author.\"}, {\"name\": \"text\", \"type\": \"VARCHAR\", \"description\": \"The post's text.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the author's client says the post was written. Client-supplied, so it can be backdated; NULL when unrepresentable.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView first saw the post \\u2014 the trustworthy clock.\"}, {\"name\": \"langs\", \"type\": \"VARCHAR[]\", \"description\": \"BCP-47 language tags the author's client declared, e.g. ['en'].\"}, {\"name\": \"reply_count\", \"type\": \"BIGINT\", \"description\": \"Replies to this post.\"}, {\"name\": \"repost_count\", \"type\": \"BIGINT\", \"description\": \"Reposts of this post.\"}, {\"name\": \"like_count\", \"type\": \"BIGINT\", \"description\": \"Likes of this post.\"}, {\"name\": \"quote_count\", \"type\": \"BIGINT\", \"description\": \"Quote posts of this post.\"}, {\"name\": \"bookmark_count\", \"type\": \"BIGINT\", \"description\": \"Times this post has been bookmarked.\"}, {\"name\": \"reply_parent_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post this replies to; NULL for a top-level post.\"}, {\"name\": \"reply_root_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the first post in the thread this reply belongs to.\"}, {\"name\": \"embed_type\", \"type\": \"VARCHAR\", \"description\": \"What is attached: 'images', 'video', 'external' (link card), 'record' (quote post), 'recordWithMedia', or NULL for plain text.\"}, {\"name\": \"quoted_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the quoted post or feed, when this is a quote post.\"}, {\"name\": \"external_url\", \"type\": \"VARCHAR\", \"description\": \"URL of the attached link card, when there is one.\"}, {\"name\": \"image_count\", \"type\": \"BIGINT\", \"description\": \"Number of attached images (0 when none).\"}, {\"name\": \"hashtags\", \"type\": \"VARCHAR[]\", \"description\": \"Hashtags in the text or the post's tag list, without the '#'.\"}, {\"name\": \"mentions\", \"type\": \"VARCHAR[]\", \"description\": \"DIDs of accounts mentioned in the text.\"}, {\"name\": \"links\", \"type\": \"VARCHAR[]\", \"description\": \"URLs linked from the text.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the post.\"}, {\"name\": \"post_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the post in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "uri"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22608,
+      [
+        "SELECT text, like_count, repost_count, reply_count FROM bluesky.main.post((SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') WHERE reason IS NULL LIMIT 1))"
+      ],
+      null,
+      [
+        "posts",
+        "blended"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "jetstream",
+      null,
+      "table",
+      "Bluesky's live firehose via Jetstream: every post, like, follow and more, time-boxed",
+      null,
+      {
+        "vgi.category": "firehose",
+        "vgi.doc_llm": "Everything happening on Bluesky right now \u2014 every post, like, repost, follow, block and profile change across the whole network \u2014 read live from Jetstream, Bluesky's JSON firehose. Reach for this for network-wide activity that no lookup can answer: what is being posted this minute, posting volume by language, which hashtags are spiking, the like rate. It listens for `seconds` (default 10) and ends, so every result is a time-boxed sample of a stream about 400 events a second strong. Filter with `collections`, or replay a recent window with `cursor` or a WHERE on `event_time`.",
+        "vgi.doc_md": "A bounded read of Bluesky's firehose, via Jetstream.\n\n### What an event is\n\nNearly every row is a **commit**: a record created, updated or deleted in someone's repository. `collection` says what kind \u2014 `app.bsky.feed.post`, `app.bsky.feed.like`, `app.bsky.feed.repost`, `app.bsky.graph.follow`, `app.bsky.graph.block`, `app.bsky.actor.profile` and more. The whole record is in `record` as JSON; the post columns (`text`, `langs`, `hashtags`, \u2026) are filled for posts, and `subject_uri` / `subject_did` for likes, reposts, follows and blocks. A few rows are `identity` or `account` events, which arrive regardless of any collection filter.\n\nEvents are raw: there are no author handles and no like counts here. Join a post's `uri` to `post()` or a `did` to `profile()` under a LATERAL to hydrate them.\n\n### How long it runs\n\nIt stops at the first of: `seconds` of wall-clock listening (default 10), `max_events`, a `LIMIT`, or an upper bound on `event_time` / `time_us` in the WHERE clause. Rows arrive about once a second while it listens.\n\n### Running without an end\n\n`seconds => 0` streams until the query is cancelled, one batch per `batch_ms`. From a DuckDB client, run `SET streaming_buffer_size = '1KB'` and `SET enable_caching_operators = false` first. DuckDB otherwise buffers about 1 MB of a streaming result before handing it over, and caches the small chunks a selective filter (a keyword match) produces until it has 2048 rows \u2014 either way, rows would not reach you as they arrive.\n\n### Listening for a topic\n\nJetstream filters by collection and account, not content. Match a topic in the WHERE clause \u2014 `text ILIKE '%duckdb%'` or `list_contains(hashtags, 'art')` \u2014 over `collections => 'app.bsky.feed.post'`. A niche topic can be quiet for minutes; replay a longer window with a WHERE on `event_time` to check.\n\n### Replaying the recent past\n\nJetstream buffers roughly the last day and a half. Pass `cursor => epoch_us(now() - INTERVAL 10 MINUTE)`, or simply `WHERE event_time >= ...`, to start there; a range such as `WHERE event_time BETWEEN now() - INTERVAL 2 MINUTE AND now() - INTERVAL 1 MINUTE` replays exactly that minute and stops. Replay runs far faster than real time, but a long window still needs a larger `seconds`. A cursor older than the buffer starts at the oldest event without an error.\n\n### Filters that are pushed to Jetstream\n\n`WHERE collection = '...'` and `WHERE did = '...'` become Jetstream's own filters, so the unwanted events never cross the network. `collections` also takes a prefix wildcard, e.g. `'app.bsky.graph.*'`.\n\n### Polling continuously\n\n`time_us` is the cursor. Remember the highest `time_us` you have read and pass it back as `cursor`: the next call resumes with the event after it, so successive calls neither skip nor repeat anything. Each call returns up to `max_events` events or `seconds` of listening, whichever comes first, so `cursor => <last>, max_events => 1000` is one page of the stream. A call that finds nothing new returns no rows; keep the old cursor.\n\nPrefer `cursor =>` over `WHERE time_us > <last>` for this: `max_events` counts events read *before* any WHERE is applied, so the WHERE form spends one of them on the event you already have. Cursors are points on one Jetstream instance's clock, so a call with a cursor never fails over to another instance; set `BLUESKY_JETSTREAM_URL` to choose which one.",
+        "vgi.example_queries": "[{\"description\": \"Ten seconds of new posts from across the whole network\", \"sql\": \"SELECT event_time, did, text, langs FROM bluesky.main.jetstream(collections => 'app.bsky.feed.post') WHERE operation = 'create'\"}, {\"description\": \"What the network is doing right now, by record type\", \"sql\": \"SELECT collection, operation, count(*) AS events FROM bluesky.main.jetstream(seconds => 5) GROUP BY ALL ORDER BY events DESC\"}, {\"description\": \"Posting volume by language over the last minute, replayed\", \"sql\": \"SELECT lang, count(*) AS posts FROM (SELECT unnest(langs) AS lang FROM bluesky.main.jetstream(collections => 'app.bsky.feed.post', seconds => 60) WHERE event_time >= now() - INTERVAL 1 MINUTE AND event_time < now()) GROUP BY lang ORDER BY posts DESC LIMIT 10\"}, {\"description\": \"Hashtags trending in the live stream\", \"sql\": \"SELECT tag, count(*) AS uses FROM (SELECT unnest(hashtags) AS tag FROM bluesky.main.jetstream(collections => 'app.bsky.feed.post', seconds => 20)) GROUP BY tag ORDER BY uses DESC LIMIT 15\"}, {\"description\": \"The most-liked posts of the last 15 seconds, hydrated with post()\", \"sql\": \"SELECT p.author_handle, p.text, j.likes FROM (SELECT subject_uri, count(*) AS likes FROM bluesky.main.jetstream(collections => 'app.bsky.feed.like', seconds => 15) WHERE subject_uri LIKE '%/app.bsky.feed.post/%' GROUP BY subject_uri ORDER BY likes DESC LIMIT 5) j, LATERAL bluesky.main.post(j.subject_uri) p ORDER BY j.likes DESC\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"time_us\", \"type\": \"BIGINT\", \"description\": \"Jetstream's cursor: microseconds since the Unix epoch at which this Jetstream instance received the event. Strictly increasing, and the value to pass as `cursor` to resume.\"}, {\"name\": \"event_time\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"`time_us` as a timestamp \\u2014 when the event reached Jetstream.\"}, {\"name\": \"kind\", \"type\": \"VARCHAR\", \"description\": \"'commit' for a record created, updated or deleted; 'identity' for a handle or DID document change; 'account' for an account activated, deactivated or taken down.\"}, {\"name\": \"did\", \"type\": \"VARCHAR\", \"description\": \"DID of the repository (account) the event belongs to.\"}, {\"name\": \"operation\", \"type\": \"VARCHAR\", \"description\": \"For commits: 'create', 'update' or 'delete'. NULL otherwise.\"}, {\"name\": \"collection\", \"type\": \"VARCHAR\", \"description\": \"For commits: the record type, e.g. 'app.bsky.feed.post', 'app.bsky.feed.like', 'app.bsky.graph.follow'. NULL otherwise.\"}, {\"name\": \"rkey\", \"type\": \"VARCHAR\", \"description\": \"For commits: the record key within its collection.\"}, {\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"For commits: the record's AT-URI (at://<did>/<collection>/<rkey>) \\u2014 for a post, the key post() and thread() take.\"}, {\"name\": \"cid\", \"type\": \"VARCHAR\", \"description\": \"For creates and updates: content hash of the new record version.\"}, {\"name\": \"rev\", \"type\": \"VARCHAR\", \"description\": \"For commits: the repository revision the change was committed in.\"}, {\"name\": \"record\", \"type\": \"VARCHAR\", \"description\": \"For creates and updates: the full record as JSON text. Query it with DuckDB's JSON functions, e.g. record->>'$.subject.uri'. NULL for deletes, which carry no record.\"}, {\"name\": \"text\", \"type\": \"VARCHAR\", \"description\": \"For a post: its text.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"The record's own createdAt, as the author's client wrote it; can be backdated.\"}, {\"name\": \"langs\", \"type\": \"VARCHAR[]\", \"description\": \"For a post: the language tags its client declared.\"}, {\"name\": \"reply_parent_uri\", \"type\": \"VARCHAR\", \"description\": \"For a reply: AT-URI of the post it replies to.\"}, {\"name\": \"reply_root_uri\", \"type\": \"VARCHAR\", \"description\": \"For a reply: AT-URI of the thread's first post.\"}, {\"name\": \"embed_type\", \"type\": \"VARCHAR\", \"description\": \"For a post: what is attached \\u2014 'images', 'video', 'external', 'record', 'recordWithMedia' \\u2014 or NULL.\"}, {\"name\": \"quoted_uri\", \"type\": \"VARCHAR\", \"description\": \"For a quote post: AT-URI of the quoted record.\"}, {\"name\": \"external_url\", \"type\": \"VARCHAR\", \"description\": \"For a post with a link card: its URL.\"}, {\"name\": \"image_count\", \"type\": \"BIGINT\", \"description\": \"For a post: number of attached images (0 when none).\"}, {\"name\": \"hashtags\", \"type\": \"VARCHAR[]\", \"description\": \"For a post: its hashtags, without '#'.\"}, {\"name\": \"mentions\", \"type\": \"VARCHAR[]\", \"description\": \"For a post: DIDs mentioned in its text.\"}, {\"name\": \"links\", \"type\": \"VARCHAR[]\", \"description\": \"For a post: URLs linked from its text.\"}, {\"name\": \"subject_uri\", \"type\": \"VARCHAR\", \"description\": \"For a like or repost: AT-URI of the post (or feed) acted on.\"}, {\"name\": \"subject_did\", \"type\": \"VARCHAR\", \"description\": \"The account acted on: the followed/blocked DID for a follow or block, the author of the liked or reposted record for a like or repost.\"}, {\"name\": \"handle\", \"type\": \"VARCHAR\", \"description\": \"For an identity event: the handle, when the event carries one.\"}, {\"name\": \"active\", \"type\": \"BOOLEAN\", \"description\": \"For an account event: whether the account is now active.\"}, {\"name\": \"account_status\", \"type\": \"VARCHAR\", \"description\": \"For an inactive account: why \\u2014 e.g. 'deactivated', 'takendown', 'suspended', 'deleted'.\"}]"
+      },
+      null,
+      [
+        "seconds",
+        "max_events",
+        "cursor",
+        "collections",
+        "batch_ms",
+        "dids",
+        "batch_events"
+      ],
+      [
+        "BIGINT",
+        "BIGINT",
+        "BIGINT",
+        "VARCHAR",
+        "BIGINT",
+        "VARCHAR",
+        "BIGINT"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22605,
+      [
+        "SELECT collection, operation, count(*) AS events FROM bluesky.main.jetstream(seconds => 5) GROUP BY ALL ORDER BY events DESC"
+      ],
+      null,
+      [
+        "firehose"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "follows",
+      null,
+      "table",
+      "Accounts a Bluesky account follows, most recent first",
+      null,
+      {
+        "vgi.category": "graph",
+        "vgi.doc_llm": "Who an account follows, most recently followed first. Reach for this to see what an account reads or to find related accounts. For just the number, use `profile().follows_count`.",
+        "vgi.doc_md": "Accounts the given actor follows, most recent first.\n\n### Streaming, and why that matters here\n\nA large account has millions of followers. Rows arrive one API page (100 accounts) at a time, so a `LIMIT` stops the walk early \u2014 but an aggregate such as `count(*)` over a large account will walk every page. Use `profile()`'s `followers_count` / `follows_count` for counts.\n\nBecause it streams, this cannot be the inner side of a correlated `LATERAL`.",
+        "vgi.example_queries": "[{\"description\": \"Accounts the official Bluesky account follows\", \"sql\": \"SELECT handle, display_name FROM bluesky.main.follows('bsky.app') LIMIT 100\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"subject_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the account whose followers or follows these are.\"}, {\"name\": \"subject_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of that account.\"}, {\"name\": \"did\", \"type\": \"VARCHAR\", \"description\": \"Permanent account identifier (DID); stable across handle changes.\"}, {\"name\": \"handle\", \"type\": \"VARCHAR\", \"description\": \"Current handle, e.g. 'bsky.app'. Can change; 'handle.invalid' means its DNS/HTTP proof failed.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"Free-form display name the account chose.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"Profile bio text.\"}, {\"name\": \"avatar_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the avatar image.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the account's profile was created.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView last indexed this profile.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the account, e.g. '!no-unauthenticated'.\"}, {\"name\": \"profile_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the profile in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "actor"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22604,
+      [
+        "SELECT handle, display_name FROM bluesky.main.follows('bsky.app') LIMIT 100"
+      ],
+      null,
+      [
+        "graph"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "thread",
+      null,
+      "table",
+      "A Bluesky post's full conversation: ancestors and replies, one row per post",
+      null,
+      {
+        "vgi.category": "posts",
+        "vgi.doc_llm": "The whole conversation around one post, flattened to one row per post with a `depth` column: negative for the posts it replies to, 0 for the post itself, positive for replies. Reach for this to read a discussion, find the most-liked reply, or trace a reply back to the post that started it.",
+        "vgi.doc_md": "Bluesky returns a thread as a tree; this flattens it to rows ordered ancestors-first, then the post, then its replies depth-first.\n\n### Reading `depth`\n\n`0` is the post you asked about. `-1` is its parent, `-2` the grandparent, and so on up to the thread root. `1` is a direct reply, `2` a reply to a reply. `reply_parent_uri` links each row to the row above it in the tree.\n\n### What is left out\n\nDeleted posts and posts hidden by a block have no content, so they produce no row; replies beneath them still appear. Replies deeper than `depth` (default 6) are not fetched \u2014 raise it, up to 1000, for long chains.",
+        "vgi.example_queries": "[{\"description\": \"The most-liked direct replies to the official account's latest post\", \"sql\": \"SELECT author_handle, text, like_count FROM bluesky.main.thread((SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') WHERE reason IS NULL LIMIT 1), depth => 1) WHERE depth = 1 ORDER BY like_count DESC LIMIT 10\"}, {\"description\": \"Replies under the official account's latest post from its best-followed repliers, biggest first\", \"sql\": \"SELECT t.author_handle, t.text, p.followers_count FROM bluesky.main.thread((SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') WHERE reason IS NULL LIMIT 1)) t, LATERAL bluesky.main.profile(t.author_did) p WHERE t.depth > 0 ORDER BY p.followers_count DESC, t.uri LIMIT 10\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"anchor\", \"type\": \"VARCHAR\", \"description\": \"The post reference exactly as it was passed in, so a LATERAL can join back on its input.\"}, {\"name\": \"depth\", \"type\": \"BIGINT\", \"description\": \"Position relative to the anchor post: 0 is the anchor, negative numbers are its ancestors (-1 the parent), positive numbers are replies (1 a direct reply).\"}, {\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post (at://<did>/app.bsky.feed.post/<rkey>); the key post() and thread() take.\"}, {\"name\": \"cid\", \"type\": \"VARCHAR\", \"description\": \"Content hash of this exact version of the post record.\"}, {\"name\": \"author_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the author.\"}, {\"name\": \"author_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of the author at the time of the query.\"}, {\"name\": \"author_display_name\", \"type\": \"VARCHAR\", \"description\": \"Display name of the author.\"}, {\"name\": \"text\", \"type\": \"VARCHAR\", \"description\": \"The post's text.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the author's client says the post was written. Client-supplied, so it can be backdated; NULL when unrepresentable.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView first saw the post \\u2014 the trustworthy clock.\"}, {\"name\": \"langs\", \"type\": \"VARCHAR[]\", \"description\": \"BCP-47 language tags the author's client declared, e.g. ['en'].\"}, {\"name\": \"reply_count\", \"type\": \"BIGINT\", \"description\": \"Replies to this post.\"}, {\"name\": \"repost_count\", \"type\": \"BIGINT\", \"description\": \"Reposts of this post.\"}, {\"name\": \"like_count\", \"type\": \"BIGINT\", \"description\": \"Likes of this post.\"}, {\"name\": \"quote_count\", \"type\": \"BIGINT\", \"description\": \"Quote posts of this post.\"}, {\"name\": \"bookmark_count\", \"type\": \"BIGINT\", \"description\": \"Times this post has been bookmarked.\"}, {\"name\": \"reply_parent_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post this replies to; NULL for a top-level post.\"}, {\"name\": \"reply_root_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the first post in the thread this reply belongs to.\"}, {\"name\": \"embed_type\", \"type\": \"VARCHAR\", \"description\": \"What is attached: 'images', 'video', 'external' (link card), 'record' (quote post), 'recordWithMedia', or NULL for plain text.\"}, {\"name\": \"quoted_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the quoted post or feed, when this is a quote post.\"}, {\"name\": \"external_url\", \"type\": \"VARCHAR\", \"description\": \"URL of the attached link card, when there is one.\"}, {\"name\": \"image_count\", \"type\": \"BIGINT\", \"description\": \"Number of attached images (0 when none).\"}, {\"name\": \"hashtags\", \"type\": \"VARCHAR[]\", \"description\": \"Hashtags in the text or the post's tag list, without the '#'.\"}, {\"name\": \"mentions\", \"type\": \"VARCHAR[]\", \"description\": \"DIDs of accounts mentioned in the text.\"}, {\"name\": \"links\", \"type\": \"VARCHAR[]\", \"description\": \"URLs linked from the text.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the post.\"}, {\"name\": \"post_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the post in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "uri",
+        "parent_height",
+        "depth"
+      ],
+      [
+        "VARCHAR",
+        "BIGINT",
+        "BIGINT"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22614,
+      [
+        "SELECT author_handle, text, like_count FROM bluesky.main.thread((SELECT uri FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') WHERE reason IS NULL LIMIT 1), depth => 1) WHERE depth = 1 ORDER BY like_count DESC LIMIT 10"
+      ],
+      null,
+      [
+        "posts",
+        "blended"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "followers",
+      null,
+      "table",
+      "Accounts that follow a Bluesky account, most recent first",
+      null,
+      {
+        "vgi.category": "graph",
+        "vgi.doc_llm": "Who follows an account, most recent follows first. Reach for this to see an account's audience or recent follower growth. For just the number, use `profile().followers_count` \u2014 this lists them one by one and a large account has millions.",
+        "vgi.doc_md": "Accounts following the given actor, most recent first.\n\n### Streaming, and why that matters here\n\nA large account has millions of followers. Rows arrive one API page (100 accounts) at a time, so a `LIMIT` stops the walk early \u2014 but an aggregate such as `count(*)` over a large account will walk every page. Use `profile()`'s `followers_count` / `follows_count` for counts.\n\nBecause it streams, this cannot be the inner side of a correlated `LATERAL`.",
+        "vgi.example_queries": "[{\"description\": \"The 50 most recent followers of an account\", \"sql\": \"SELECT handle, display_name FROM bluesky.main.followers('bsky.app') LIMIT 50\"}, {\"description\": \"The biggest accounts among the 100 that most recently followed an account\", \"sql\": \"SELECT p.handle, p.display_name, p.followers_count FROM (SELECT did FROM bluesky.main.followers('bsky.app') LIMIT 100) f, LATERAL bluesky.main.profile(f.did) p ORDER BY p.followers_count DESC, p.did LIMIT 10\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"subject_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the account whose followers or follows these are.\"}, {\"name\": \"subject_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of that account.\"}, {\"name\": \"did\", \"type\": \"VARCHAR\", \"description\": \"Permanent account identifier (DID); stable across handle changes.\"}, {\"name\": \"handle\", \"type\": \"VARCHAR\", \"description\": \"Current handle, e.g. 'bsky.app'. Can change; 'handle.invalid' means its DNS/HTTP proof failed.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"Free-form display name the account chose.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"Profile bio text.\"}, {\"name\": \"avatar_url\", \"type\": \"VARCHAR\", \"description\": \"CDN URL of the avatar image.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the account's profile was created.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView last indexed this profile.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the account, e.g. '!no-unauthenticated'.\"}, {\"name\": \"profile_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the profile in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "actor"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22603,
+      [
+        "SELECT handle, display_name FROM bluesky.main.followers('bsky.app') LIMIT 50"
+      ],
+      null,
+      [
+        "graph"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "feed",
+      null,
+      "table",
+      "The posts a Bluesky custom feed is currently serving, in feed order",
+      null,
+      {
+        "vgi.category": "feeds",
+        "vgi.doc_llm": "Read a custom feed \u2014 such as Discover, or any community feed \u2014 as its algorithm serves it to a logged-out visitor, in the feed's own ranking order. Reach for this to see what a feed is surfacing right now. Find feed URIs with `popular_feeds()` or `actor_feeds()`.",
+        "vgi.doc_md": "The posts a feed generator returns, hydrated into full post rows.\n\n### Order is the feed's\n\nRows come back in the order the feed's algorithm ranked them, not by time. Keep that order with `row_number() OVER ()` before you sort by anything else.\n\n### The feed must be a literal\n\nPass the feed as a literal AT-URI or bsky.app feed URL: DuckDB does not accept a subquery as this function's argument. Look the URI up first, then call this with it.\n\n### Availability\n\nA feed is computed by its publisher's own service; the AppView only forwards the request. A feed whose service is down fails, and feeds personalised to a logged-in viewer show their logged-out fallback.",
+        "vgi.example_queries": "[{\"description\": \"What the Discover feed is showing right now\", \"sql\": \"SELECT author_handle, text, like_count FROM bluesky.main.feed('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot') LIMIT 30\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post (at://<did>/app.bsky.feed.post/<rkey>); the key post() and thread() take.\"}, {\"name\": \"cid\", \"type\": \"VARCHAR\", \"description\": \"Content hash of this exact version of the post record.\"}, {\"name\": \"author_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the author.\"}, {\"name\": \"author_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of the author at the time of the query.\"}, {\"name\": \"author_display_name\", \"type\": \"VARCHAR\", \"description\": \"Display name of the author.\"}, {\"name\": \"text\", \"type\": \"VARCHAR\", \"description\": \"The post's text.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the author's client says the post was written. Client-supplied, so it can be backdated; NULL when unrepresentable.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView first saw the post \\u2014 the trustworthy clock.\"}, {\"name\": \"langs\", \"type\": \"VARCHAR[]\", \"description\": \"BCP-47 language tags the author's client declared, e.g. ['en'].\"}, {\"name\": \"reply_count\", \"type\": \"BIGINT\", \"description\": \"Replies to this post.\"}, {\"name\": \"repost_count\", \"type\": \"BIGINT\", \"description\": \"Reposts of this post.\"}, {\"name\": \"like_count\", \"type\": \"BIGINT\", \"description\": \"Likes of this post.\"}, {\"name\": \"quote_count\", \"type\": \"BIGINT\", \"description\": \"Quote posts of this post.\"}, {\"name\": \"bookmark_count\", \"type\": \"BIGINT\", \"description\": \"Times this post has been bookmarked.\"}, {\"name\": \"reply_parent_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post this replies to; NULL for a top-level post.\"}, {\"name\": \"reply_root_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the first post in the thread this reply belongs to.\"}, {\"name\": \"embed_type\", \"type\": \"VARCHAR\", \"description\": \"What is attached: 'images', 'video', 'external' (link card), 'record' (quote post), 'recordWithMedia', or NULL for plain text.\"}, {\"name\": \"quoted_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the quoted post or feed, when this is a quote post.\"}, {\"name\": \"external_url\", \"type\": \"VARCHAR\", \"description\": \"URL of the attached link card, when there is one.\"}, {\"name\": \"image_count\", \"type\": \"BIGINT\", \"description\": \"Number of attached images (0 when none).\"}, {\"name\": \"hashtags\", \"type\": \"VARCHAR[]\", \"description\": \"Hashtags in the text or the post's tag list, without the '#'.\"}, {\"name\": \"mentions\", \"type\": \"VARCHAR[]\", \"description\": \"DIDs of accounts mentioned in the text.\"}, {\"name\": \"links\", \"type\": \"VARCHAR[]\", \"description\": \"URLs linked from the text.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the post.\"}, {\"name\": \"post_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the post in the Bluesky web app.\"}, {\"name\": \"reason\", \"type\": \"VARCHAR\", \"description\": \"Why the post is in this feed: 'repost', 'pin', or NULL when it is simply the author's own post.\"}, {\"name\": \"reposted_by_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the account that reposted it, when reason = 'repost'.\"}, {\"name\": \"reposted_by_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of that account.\"}, {\"name\": \"reposted_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When it was reposted, when reason = 'repost'.\"}]"
+      },
+      null,
+      [
+        "uri"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22602,
+      [
+        "SELECT author_handle, text, like_count FROM bluesky.main.feed('at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot') LIMIT 30"
+      ],
+      null,
+      [
+        "feeds"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "all_trends",
+      null,
+      "table",
+      "Bluesky's current trending topics (the scan backing the `trends` table)",
+      null,
+      {
+        "vgi.category": "trends",
+        "vgi.doc_llm": "What is trending on Bluesky right now, ranked. Prefer the `trends` table, which scans this and reads as plain SQL; this form exists for the rare case you want the scan itself.",
+        "vgi.doc_md": "Bluesky's current trending topics, up to 25, in rank order.\n\n### Prefer the table\n\nThe `trends` catalog table is backed by this function and returns exactly the same rows; it is named `all_trends` only so the two can coexist in one schema.",
+        "vgi.example_queries": "[{\"description\": \"Trending topics, read straight from the scan function\", \"sql\": \"SELECT rank, display_name, post_count FROM bluesky.main.all_trends() ORDER BY rank\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"rank\", \"type\": \"BIGINT\", \"description\": \"Position in Bluesky's trending list, 1 being the top trend.\"}, {\"name\": \"topic\", \"type\": \"VARCHAR\", \"description\": \"Bluesky's opaque identifier for the trend.\"}, {\"name\": \"display_name\", \"type\": \"VARCHAR\", \"description\": \"The trend's headline, e.g. 'Justin Verlander retires from MLB'.\"}, {\"name\": \"description\", \"type\": \"VARCHAR\", \"description\": \"One-sentence summary of what the trend is about.\"}, {\"name\": \"category\", \"type\": \"VARCHAR\", \"description\": \"Bluesky's category for the trend, e.g. 'sports', 'politics'.\"}, {\"name\": \"status\", \"type\": \"VARCHAR\", \"description\": \"Where the trend is in its lifecycle, as Bluesky labels it: e.g. 'trending' while growing, 'saturating' near its peak, 'cooling' after it.\"}, {\"name\": \"post_count\", \"type\": \"BIGINT\", \"description\": \"Count of posts Bluesky has attributed to the trend so far.\"}, {\"name\": \"started_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When Bluesky first detected the trend.\"}, {\"name\": \"actor_handles\", \"type\": \"VARCHAR[]\", \"description\": \"Handles of accounts Bluesky associates with the trend.\"}, {\"name\": \"trend_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the trend's feed in the Bluesky web app.\"}]"
+      },
+      null,
+      [],
+      [],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22600,
+      [
+        "SELECT rank, display_name, post_count FROM bluesky.main.all_trends() ORDER BY rank"
+      ],
+      null,
+      [
+        "trends"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "author_feed",
+      null,
+      "table",
+      "A Bluesky account's posts and reposts, newest first",
+      null,
+      {
+        "vgi.category": "posts",
+        "vgi.doc_llm": "Everything one account has posted or reposted, newest first \u2014 their profile timeline. Reach for this to analyse what an account talks about, how its posts perform, or how often it posts. Reposts are included and marked `reason = 'repost'`; filter `reason IS NULL` for the account's own posts only.",
+        "vgi.doc_md": "The account's profile timeline, as the app shows it.\n\n### Reposts are in here\n\nA repost appears as the *original* post (with the original author) and `reason = 'repost'`. For only the account's own writing, add `WHERE reason IS NULL`, or `author_did = <their did>`.\n\n### The `filter` argument\n\n`posts_no_replies` drops replies at the source; `posts_with_media` and `posts_with_video` keep only posts with attachments; `posts_and_author_threads` keeps replies only when they continue the author's own thread.\n\n### Streaming\n\nRows arrive 100 at a time, so a `LIMIT` stops early. It cannot be the inner side of a correlated `LATERAL`.",
+        "vgi.example_queries": "[{\"description\": \"The official account's 20 most recent original posts\", \"sql\": \"SELECT created_at, text, like_count FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') WHERE reason IS NULL ORDER BY created_at DESC LIMIT 20\"}, {\"description\": \"Which hashtags an account uses most in its recent posts\", \"sql\": \"SELECT tag, count(*) AS uses FROM (SELECT unnest(hashtags) AS tag FROM (SELECT hashtags FROM bluesky.main.author_feed('bsky.app') LIMIT 300)) GROUP BY tag ORDER BY uses DESC\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post (at://<did>/app.bsky.feed.post/<rkey>); the key post() and thread() take.\"}, {\"name\": \"cid\", \"type\": \"VARCHAR\", \"description\": \"Content hash of this exact version of the post record.\"}, {\"name\": \"author_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the author.\"}, {\"name\": \"author_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of the author at the time of the query.\"}, {\"name\": \"author_display_name\", \"type\": \"VARCHAR\", \"description\": \"Display name of the author.\"}, {\"name\": \"text\", \"type\": \"VARCHAR\", \"description\": \"The post's text.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the author's client says the post was written. Client-supplied, so it can be backdated; NULL when unrepresentable.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView first saw the post \\u2014 the trustworthy clock.\"}, {\"name\": \"langs\", \"type\": \"VARCHAR[]\", \"description\": \"BCP-47 language tags the author's client declared, e.g. ['en'].\"}, {\"name\": \"reply_count\", \"type\": \"BIGINT\", \"description\": \"Replies to this post.\"}, {\"name\": \"repost_count\", \"type\": \"BIGINT\", \"description\": \"Reposts of this post.\"}, {\"name\": \"like_count\", \"type\": \"BIGINT\", \"description\": \"Likes of this post.\"}, {\"name\": \"quote_count\", \"type\": \"BIGINT\", \"description\": \"Quote posts of this post.\"}, {\"name\": \"bookmark_count\", \"type\": \"BIGINT\", \"description\": \"Times this post has been bookmarked.\"}, {\"name\": \"reply_parent_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post this replies to; NULL for a top-level post.\"}, {\"name\": \"reply_root_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the first post in the thread this reply belongs to.\"}, {\"name\": \"embed_type\", \"type\": \"VARCHAR\", \"description\": \"What is attached: 'images', 'video', 'external' (link card), 'record' (quote post), 'recordWithMedia', or NULL for plain text.\"}, {\"name\": \"quoted_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the quoted post or feed, when this is a quote post.\"}, {\"name\": \"external_url\", \"type\": \"VARCHAR\", \"description\": \"URL of the attached link card, when there is one.\"}, {\"name\": \"image_count\", \"type\": \"BIGINT\", \"description\": \"Number of attached images (0 when none).\"}, {\"name\": \"hashtags\", \"type\": \"VARCHAR[]\", \"description\": \"Hashtags in the text or the post's tag list, without the '#'.\"}, {\"name\": \"mentions\", \"type\": \"VARCHAR[]\", \"description\": \"DIDs of accounts mentioned in the text.\"}, {\"name\": \"links\", \"type\": \"VARCHAR[]\", \"description\": \"URLs linked from the text.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the post.\"}, {\"name\": \"post_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the post in the Bluesky web app.\"}, {\"name\": \"reason\", \"type\": \"VARCHAR\", \"description\": \"Why the post is in this feed: 'repost', 'pin', or NULL when it is simply the author's own post.\"}, {\"name\": \"reposted_by_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the account that reposted it, when reason = 'repost'.\"}, {\"name\": \"reposted_by_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of that account.\"}, {\"name\": \"reposted_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When it was reposted, when reason = 'repost'.\"}]"
+      },
+      null,
+      [
+        "actor",
+        "include_pins",
+        "filter"
+      ],
+      [
+        "VARCHAR",
+        "BOOLEAN",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22601,
+      [
+        "SELECT created_at, text, like_count FROM bluesky.main.author_feed('bsky.app', filter => 'posts_no_replies') WHERE reason IS NULL ORDER BY created_at DESC LIMIT 20"
+      ],
+      null,
+      [
+        "posts"
+      ]
+    ],
+    [
+      "bluesky",
+      "22595",
+      "main",
+      "search_posts",
+      null,
+      "table",
+      "Full-text search over Bluesky posts",
+      null,
+      {
+        "vgi.category": "posts",
+        "vgi.doc_llm": "Search every public Bluesky post by keyword, newest first (or by engagement with `sort => 'top'`); returns at most 100 posts per call. This is the way in when you have a topic rather than an account or a post: what people are saying about something, who is saying it, and how much it is being shared. Narrow with `author`, `lang`, `tag`, `domain`, `since` and `until` \u2014 or with an ordinary WHERE on `created_at` / `author_handle`, which is pushed to the API.",
+        "vgi.doc_md": "Bluesky's full-text post search.\n\n### Query syntax\n\nThe query string supports Bluesky's search operators \u2014 `from:handle`, `mentions:handle`, `lang:en`, `domain:example.com`, `#hashtag`, `\"exact phrase\"` \u2014 and each also has a named argument.\n\n### Filters that are pushed to the API\n\n`WHERE author_handle = '...'` becomes the endpoint's `author` filter. An upper bound on `created_at` becomes `until`. A lower bound becomes `since` only when `indexed_at` is bounded too, because the endpoint filters on the earlier of the two timestamps \u2014 pass `since =>` explicitly to narrow by time at the source.\n\n### At most 100 posts per search\n\nBluesky serves the first page of search results anonymously but refuses (HTTP 403) to page further without a login, so each call returns at most 100 posts. To see more, narrow the search \u2014 by `since`/`until` windows, `author`, `lang` or `tag` \u2014 and union several calls. This is a sample of a topic, not a census.\n\n### Freshness\n\nSearch is served uncached by the origin; pass `cache_ttl => N` to cache.",
+        "vgi.example_queries": "[{\"description\": \"The latest posts mentioning DuckDB\", \"sql\": \"SELECT created_at, author_handle, text FROM bluesky.main.search_posts('duckdb') LIMIT 25\"}, {\"description\": \"The best-followed accounts posting about DuckDB, with how many of the latest 100 matches each wrote\", \"sql\": \"SELECT p.handle, p.followers_count, count(*) AS posts FROM (SELECT author_did FROM bluesky.main.search_posts('duckdb') LIMIT 100) s, LATERAL bluesky.main.profile(s.author_did) p GROUP BY p.handle, p.followers_count ORDER BY p.followers_count DESC, p.handle LIMIT 10\"}, {\"description\": \"The most-engaged posts on a topic this week\", \"sql\": \"SELECT author_handle, text, like_count, repost_count FROM bluesky.main.search_posts('duckdb', sort => 'top', since => CAST(current_date - 7 AS VARCHAR)) ORDER BY like_count DESC LIMIT 20\"}, {\"description\": \"Who posted most about a topic among the latest 100 matches\", \"sql\": \"SELECT author_handle, count(*) AS posts FROM bluesky.main.search_posts('duckdb') GROUP BY author_handle ORDER BY posts DESC LIMIT 10\"}]",
+        "vgi.result_columns_schema": "[{\"name\": \"uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post (at://<did>/app.bsky.feed.post/<rkey>); the key post() and thread() take.\"}, {\"name\": \"cid\", \"type\": \"VARCHAR\", \"description\": \"Content hash of this exact version of the post record.\"}, {\"name\": \"author_did\", \"type\": \"VARCHAR\", \"description\": \"DID of the author.\"}, {\"name\": \"author_handle\", \"type\": \"VARCHAR\", \"description\": \"Handle of the author at the time of the query.\"}, {\"name\": \"author_display_name\", \"type\": \"VARCHAR\", \"description\": \"Display name of the author.\"}, {\"name\": \"text\", \"type\": \"VARCHAR\", \"description\": \"The post's text.\"}, {\"name\": \"created_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the author's client says the post was written. Client-supplied, so it can be backdated; NULL when unrepresentable.\"}, {\"name\": \"indexed_at\", \"type\": \"TIMESTAMP WITH TIME ZONE\", \"description\": \"When the AppView first saw the post \\u2014 the trustworthy clock.\"}, {\"name\": \"langs\", \"type\": \"VARCHAR[]\", \"description\": \"BCP-47 language tags the author's client declared, e.g. ['en'].\"}, {\"name\": \"reply_count\", \"type\": \"BIGINT\", \"description\": \"Replies to this post.\"}, {\"name\": \"repost_count\", \"type\": \"BIGINT\", \"description\": \"Reposts of this post.\"}, {\"name\": \"like_count\", \"type\": \"BIGINT\", \"description\": \"Likes of this post.\"}, {\"name\": \"quote_count\", \"type\": \"BIGINT\", \"description\": \"Quote posts of this post.\"}, {\"name\": \"bookmark_count\", \"type\": \"BIGINT\", \"description\": \"Times this post has been bookmarked.\"}, {\"name\": \"reply_parent_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the post this replies to; NULL for a top-level post.\"}, {\"name\": \"reply_root_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the first post in the thread this reply belongs to.\"}, {\"name\": \"embed_type\", \"type\": \"VARCHAR\", \"description\": \"What is attached: 'images', 'video', 'external' (link card), 'record' (quote post), 'recordWithMedia', or NULL for plain text.\"}, {\"name\": \"quoted_uri\", \"type\": \"VARCHAR\", \"description\": \"AT-URI of the quoted post or feed, when this is a quote post.\"}, {\"name\": \"external_url\", \"type\": \"VARCHAR\", \"description\": \"URL of the attached link card, when there is one.\"}, {\"name\": \"image_count\", \"type\": \"BIGINT\", \"description\": \"Number of attached images (0 when none).\"}, {\"name\": \"hashtags\", \"type\": \"VARCHAR[]\", \"description\": \"Hashtags in the text or the post's tag list, without the '#'.\"}, {\"name\": \"mentions\", \"type\": \"VARCHAR[]\", \"description\": \"DIDs of accounts mentioned in the text.\"}, {\"name\": \"links\", \"type\": \"VARCHAR[]\", \"description\": \"URLs linked from the text.\"}, {\"name\": \"labels\", \"type\": \"VARCHAR[]\", \"description\": \"Moderation labels applied to the post.\"}, {\"name\": \"post_url\", \"type\": \"VARCHAR\", \"description\": \"Link to the post in the Bluesky web app.\"}]"
+      },
+      null,
+      [
+        "query",
+        "tag",
+        "since",
+        "author",
+        "lang",
+        "mentions",
+        "sort",
+        "cache_ttl",
+        "url",
+        "until",
+        "domain"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22613,
+      [
+        "SELECT created_at, author_handle, text FROM bluesky.main.search_posts('duckdb') LIMIT 25"
+      ],
+      null,
+      [
+        "posts"
+      ]
+    ]
+  ]
+}

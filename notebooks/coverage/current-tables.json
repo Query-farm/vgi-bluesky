@@ -1,0 +1,50 @@
+{
+  "query": "SELECT * FROM duckdb_tables() WHERE database_name='bluesky'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "schema_oid",
+    "table_name",
+    "table_oid",
+    "comment",
+    "tags",
+    "internal",
+    "temporary",
+    "has_primary_key",
+    "estimated_size",
+    "column_count",
+    "index_count",
+    "check_constraint_count",
+    "sql"
+  ],
+  "rows": [
+    [
+      "bluesky",
+      22595,
+      "main",
+      22596,
+      "trends",
+      22745,
+      "What Bluesky currently reports as trending, in rank order",
+      {
+        "domain": "social-media",
+        "provider": "bluesky",
+        "vgi.category": "trends",
+        "vgi.doc_llm": "What Bluesky currently reports as trending, up to 25 topics in rank order, with a headline, a one-line summary, a category and how many posts it has drawn. Reach for this first when asked what people are talking about. `status` says where each trend is in its lifecycle \u2014 'trending', 'saturating' or 'cooling'.",
+        "vgi.doc_md": "Bluesky's current trending topics, one row per trend.\n\n### Why this is a table and everything else is a function\n\nIt needs no key, it is small \u2014 never more than 25 rows \u2014 and it is a single unpaginated request. Nothing else here is any of those things.\n\n### Going deeper\n\nEach trend is backed by a feed in the web app (`trend_url`). To read what people are saying, pass the trend's `display_name` to `search_posts()`.\n\n### Freshness\n\nThe AppView declares a 30-second `Cache-Control`, which is forwarded to the result cache.",
+        "vgi.example_queries": "[{\"description\": \"What is trending right now\", \"sql\": \"SELECT rank, display_name, description, post_count FROM bluesky.main.trends ORDER BY rank\"}, {\"description\": \"Trending topics by category\", \"sql\": \"SELECT category, count(*) AS trends, sum(post_count) AS posts FROM bluesky.main.trends GROUP BY category ORDER BY posts DESC\"}]",
+        "vgi.keywords": "[\"trending\", \"topics\", \"news\", \"bluesky\", \"discovery\"]",
+        "vgi.title": "Trending Topics"
+      },
+      false,
+      false,
+      true,
+      0,
+      10,
+      1,
+      0,
+      "CREATE TABLE trends(rank BIGINT, topic VARCHAR, display_name VARCHAR, description VARCHAR, category VARCHAR, status VARCHAR, post_count BIGINT, started_at TIMESTAMP WITH TIME ZONE, actor_handles VARCHAR[], trend_url VARCHAR, PRIMARY KEY(rank));"
+    ]
+  ]
+}

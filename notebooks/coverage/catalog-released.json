@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "repository": "Query-farm/vgi-bluesky",
+  "revision": "v0.4.0",
+  "captured_at": "2026-11-15T01:54:11.150340+00:00",
+  "default_schema": "main",
+  "scope": "all_public_functions_and_tables",
+  "complete": true,
+  "evidence": [
+    {
+      "path": "coverage/provenance.json",
+      "sha256": "a0631080c146b465bb48687ef6f32c38183bbd1bf28c788896f7103cfd793f5f",
+      "description": "Actual catalog collection, source and fixture provenance."
+    },
+    {
+      "path": "coverage/source-comparison.json",
+      "sha256": "8356ca8cc08374334b7914e42c859180354db23abaa7722fd76a01b7afdfa7af",
+      "description": "Full release/current source/dependency diff."
+    },
+    {
+      "path": "coverage/analysis-preservation.json",
+      "sha256": "18cd49ea6e6cfcf3d3c7cfc0a514f0fe624963498f539fc22c4b355da2ab78f1",
+      "description": "Preserved original analytical SQL, narrative and displayed tables."
+    },
+    {
+      "path": "coverage/released-functions.json",
+      "sha256": "2a0df7b0cf79ec528b7e2015946fa21b56423de378bd2ad12c7ded0707b69148",
+      "description": "Complete native duckdb_functions() filtered by bluesky; no surfaces omitted."
+    },
+    {
+      "path": "coverage/released-tables.json",
+      "sha256": "20e64d175960163209493be51b896f37e1f5c0173698a7bb2106c8534d356aab",
+      "description": "Complete native duckdb_tables() filtered by bluesky; no surfaces omitted."
+    },
+    {
+      "path": "coverage/released-views.json",
+      "sha256": "87d454a73f071056d3f935621a851ff14c23350e1bb84d4ec28063fa905bd90c",
+      "description": "Complete native duckdb_views() filtered by bluesky; no surfaces omitted."
+    },
+    {
+      "path": "coverage/released-databases.json",
+      "sha256": "4401d7e4b71d46c21cc183d3659a52106bab261aa94c80e2441e5640ae6f0118",
+      "description": "Actual catalog title/subtitle metadata."
+    }
+  ],
+  "objects": [
+    {
+      "schema": "main",
+      "name": "actor_feeds",
+      "kind": "function",
+      "signatures": [
+        "actor_feeds(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "all_trends",
+      "kind": "function",
+      "signatures": [
+        "all_trends() -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "author_feed",
+      "kind": "function",
+      "signatures": [
+        "author_feed(VARCHAR, BOOLEAN, VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "feed",
+      "kind": "function",
+      "signatures": [
+        "feed(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "followers",
+      "kind": "function",
+      "signatures": [
+        "followers(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "follows",
+      "kind": "function",
+      "signatures": [
+        "follows(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "jetstream",
+      "kind": "function",
+      "signatures": [
+        "jetstream(BIGINT, BIGINT, BIGINT, VARCHAR, BIGINT, VARCHAR, BIGINT) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "likes",
+      "kind": "function",
+      "signatures": [
+        "likes(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "popular_feeds",
+      "kind": "function",
+      "signatures": [
+        "popular_feeds(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "post",
+      "kind": "function",
+      "signatures": [
+        "post(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "profile",
+      "kind": "function",
+      "signatures": [
+        "profile(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "quotes",
+      "kind": "function",
+      "signatures": [
+        "quotes(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "reposted_by",
+      "kind": "function",
+      "signatures": [
+        "reposted_by(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "search_actors",
+      "kind": "function",
+      "signatures": [
+        "search_actors(VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "search_posts",
+      "kind": "function",
+      "signatures": [
+        "search_posts(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, BIGINT, VARCHAR, VARCHAR, VARCHAR) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "thread",
+      "kind": "function",
+      "signatures": [
+        "thread(VARCHAR, BIGINT, BIGINT) -> TABLE"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "trends",
+      "kind": "table",
+      "signatures": [
+        "TABLES"
+      ],
+      "authentication": "none",
+      "access": "read"
+    }
+  ]
+}

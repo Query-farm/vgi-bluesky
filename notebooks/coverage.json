@@ -1,0 +1,365 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-released.json",
+      "sha256": "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "catalog_sha256": "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+        "notes": "All17 public names retained, including stream and both trend forms. Released v0.4.0 and captured public main expose identical 17 logical names and signatures. Source/dependency diff changes metadata, examples and task documentation; runtime transformations and dependencies are unchanged. All analytical receipts use v0.4.0. Current-interface credit is reviewed separately and is not execution evidence for the current SHA."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "catalog_sha256": "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26",
+        "notes": "All17 public names retained, including stream and both trend forms. Released v0.4.0 and captured public main expose identical 17 logical names and signatures. Source/dependency diff changes metadata, examples and task documentation; runtime transformations and dependencies are unchanged. All analytical receipts use v0.4.0. Current-interface credit is reviewed separately and is not execution evidence for the current SHA."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_typical_posts_and_concentration.ipynb",
+      "sha256": "f30a8d7ca4459af5dfc5f906ff6401dfb8a93590f8bdc388b414050c72c67e07",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "a393146cd67e968d6a360539df7e505fb8e6ad6d70a0c03c5745bb06e3730224"
+      }
+    },
+    {
+      "path": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+      "execution": {
+        "path": "coverage/run-02.json",
+        "sha256": "d6dfcc3d9aa4ff8d25c05e07d2b168237613217ad2dd76bb9f183c0e5a083e83"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "author_feed"
+      },
+      "notebook": "01_typical_posts_and_concentration.ipynb",
+      "sql": [
+        {
+          "cell": "9e74ff82",
+          "reference": "bluesky.main.author_feed"
+        }
+      ],
+      "narrative_cells": [
+        "8d031087"
+      ],
+      "result_cells": [
+        "9e74ff82",
+        "4f013b57",
+        "7e532297",
+        "5ae4d5fe"
+      ],
+      "interpretation_cells": [
+        "132d3cfe"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "f30a8d7ca4459af5dfc5f906ff6401dfb8a93590f8bdc388b414050c72c67e07",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Define a bounded own-post population before comparing mean, median and concentration of cumulative likes.",
+        "finding": "The 98-item recording yields15 measured own posts in30days; mean3770 exceeds median2089 and the top2 account for44.0% of observed likes. Widening the creation window changes selection, not source counters or historical like growth; bounded response coverage and post-age/exposure limitations remain explicit."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "search_actors"
+      },
+      "notebook": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sql": [
+        {
+          "cell": "discovery-fetch",
+          "reference": "bluesky.main.search_actors"
+        }
+      ],
+      "narrative_cells": [
+        "discovery-story"
+      ],
+      "result_cells": [
+        "discovery-fetch",
+        "discovery-result"
+      ],
+      "interpretation_cells": [
+        "discovery-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Distinguish account candidate identities from post-search results before choosing an anchor.",
+        "finding": "The authored directory returns two distinct DIDs, while post search returns two post URIs by one publisher. These object populations and identifiers differ; synthetic candidates do not validate live search ranking."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "search_posts"
+      },
+      "notebook": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sql": [
+        {
+          "cell": "discovery-fetch",
+          "reference": "bluesky.main.search_posts"
+        }
+      ],
+      "narrative_cells": [
+        "discovery-story"
+      ],
+      "result_cells": [
+        "discovery-fetch",
+        "discovery-result"
+      ],
+      "interpretation_cells": [
+        "discovery-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Select a post URI from author-scoped discovery without conflating post counts and account counts.",
+        "finding": "Two explicit post URIs share one author DID and include the selected anchor. Search is materialized once and used for selection evidence, not treated as a comprehensive or calibrated live search result."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "post"
+      },
+      "notebook": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sql": [
+        {
+          "cell": "interactions-fetch",
+          "reference": "bluesky.main.post"
+        }
+      ],
+      "narrative_cells": [
+        "counter-story"
+      ],
+      "result_cells": [
+        "interactions-fetch",
+        "counts-chart"
+      ],
+      "interpretation_cells": [
+        "counts-chart"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Establish the anchor aggregate counters separately from retained interaction-list rows.",
+        "finding": "The anchor reports6likes/3quotes/3reposts and4replies. The first three counters sum12 but are different interaction objects, not12unique people. At the fixed3-row budget only9listrows are retained; the depth experiment leaves counters unchanged."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "likes"
+      },
+      "notebook": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sql": [
+        {
+          "cell": "interactions-fetch",
+          "reference": "bluesky.main.likes"
+        }
+      ],
+      "narrative_cells": [
+        "counter-story"
+      ],
+      "result_cells": [
+        "interactions-fetch",
+        "counts-chart",
+        "identities-chart"
+      ],
+      "interpretation_cells": [
+        "counts-chart"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Show how a bounded retained list can cover only part of a reported counter and supply DID identities.",
+        "finding": "Three of six authored like entries are retained with timestamps; the HTTPbody contains all6, so SQLretention is not network transfer size. Alpha retains an older handle that correctly joins to its current profile byDID."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "reposted_by"
+      },
+      "notebook": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sql": [
+        {
+          "cell": "interactions-fetch",
+          "reference": "bluesky.main.reposted_by"
+        }
+      ],
+      "narrative_cells": [
+        "identity-story"
+      ],
+      "result_cells": [
+        "interactions-fetch",
+        "identities-chart"
+      ],
+      "interpretation_cells": [
+        "identities-chart"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Distinguish reposting identities from post counters and preserve missing interaction timestamps.",
+        "finding": "Three retained reposter DIDs overlap with the liker and quote-author sets. Repost timestamps areNULL by the worker contract. Column totals are memberships and cannot be summed as unique reach."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "quotes"
+      },
+      "notebook": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sql": [
+        {
+          "cell": "interactions-fetch",
+          "reference": "bluesky.main.quotes"
+        }
+      ],
+      "narrative_cells": [
+        "identity-story"
+      ],
+      "result_cells": [
+        "identities-chart",
+        "checks-audit"
+      ],
+      "interpretation_cells": [
+        "identities-chart"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Retain quote-post identity and quoted-URI reference before reducing to author memberships.",
+        "finding": "Three distinct quote URIs all reference the anchor and have overlapping authorDIDs with other lists. Quote posts and unique authors are different objects; the deduplicated membership matrix preserves that distinction."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "thread"
+      },
+      "notebook": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sql": [
+        {
+          "cell": "thread-fetch",
+          "reference": "bluesky.main.thread"
+        }
+      ],
+      "narrative_cells": [
+        "thread-story"
+      ],
+      "result_cells": [
+        "thread-fetch",
+        "thread-chart"
+      ],
+      "interpretation_cells": [
+        "thread-chart"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Separate visible returned post nodes, unrequested reply generations and unavailable nodes.",
+        "finding": "Depth1 returns anchor+2directreplies, marking generation2 unrequested. Depth2adds one nestedpost/author; the reply counter remains4 and an unavailable node is skipped. The discrepancy is not evidence of live deleted-post counts or completeness."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "profile"
+      },
+      "notebook": "02_engagement_counts_do_not_identify_an_audience.ipynb",
+      "sql": [
+        {
+          "cell": "identity-fetch",
+          "reference": "bluesky.main.profile"
+        }
+      ],
+      "narrative_cells": [
+        "identity-story"
+      ],
+      "result_cells": [
+        "identity-fetch",
+        "identities-chart"
+      ],
+      "interpretation_cells": [
+        "identities-chart"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-15T01:54:11.150340+00:00",
+        "notebook_sha256": "870647a466336aacfaa22dd20a3576f9bf34bbaf5ac98ea4b234b7d32f23c10b",
+        "catalog_sha256": [
+          "6aefab66a9b72524b0382f61998ff92177985fd7f6b8906a1850b35cf1eb737d",
+          "30e6cefface022ca310fd4b82f599c454da2a310e5a2be0edd2dd5bd070e7f26"
+        ],
+        "purpose": "Enrich distinct participant DIDs while retaining handle changes, missing follower counts and overlap.",
+        "finding": "Default11memberships map to5DIDs; depth2adds one membership andDID. Alpha old/new handles remain one identity viaDID; Beta follower count remainsNULL. Profile counts do not establish exposure, and the observed set excludes unreturned/unrequested participants."
+      }
+    }
+  ]
+}

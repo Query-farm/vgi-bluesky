@@ -1,0 +1,14 @@
+{
+  "repository": "Query-farm/vgi-bluesky",
+  "release_tag": "v0.4.0",
+  "release_revision": "244db8e4f766d986863814e68b5c51a5f15d6bf3",
+  "current_public_revision": "eae45012647d936cc7deadeb48e115e246ce4744",
+  "engine": "Haybarn 2.0.0rc11 / VGI e75482339d",
+  "captured_at": "2026-11-15T01:54:11.150340+00:00",
+  "released_launch": "uvx --from git+https://github.com/Query-farm/vgi-bluesky@v0.4.0 vgi-bluesky",
+  "current_catalog_probe": "Exact current SHA using same clean uvx Git launcher; native catalogs collected through actual isolated Haybarn connections, empty temporary SQL-secret storage, persistent secrets disabled, UTC.",
+  "data_boundary": "Book01 unchanged projected public official-feed recording captured 2026-11-14T05:17:23.391655+00:00, 98 items from a larger feed, not original HTTP bytes. Book02 separate authored fictional accounts/posts served by strict loopback GET model with no upstream fallback; real released worker does parsing/thread flattening/profile fanout. No credentials or real social writes. Separate explicitly live bounded Book01 also passed, not included in controlled analysis.",
+  "counting": "Complete 16 functions plus trends table, zero views. all_trends and trends have distinct names and both count. Source exposes public GET read contracts and read-only Jetstream; no authenticated/write SQL APIs. No difficult surfaces excluded.",
+  "source_ci": "43561213091 success reused. Scheduled live run43600916694 had two existing Jetstream failures, 11 passes, documented separately; no Jetstream coverage claimed.",
+  "comparison": "Released v0.4.0 and captured public main expose identical 17 logical names and signatures. Source/dependency diff changes metadata, examples and task documentation; runtime transformations and dependencies are unchanged. All analytical receipts use v0.4.0. Current-interface credit is reviewed separately and is not execution evidence for the current SHA."
+}
