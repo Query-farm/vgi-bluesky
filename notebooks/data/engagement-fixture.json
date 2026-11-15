@@ -1,0 +1,779 @@
+{
+  "provenance": {
+    "mode": "explicitly authored synthetic local API model",
+    "created_utc": "2026-11-15",
+    "purpose": "Exercise real released worker GET flattening, bounded SQL populations, DID joins, missing values and thread-depth semantics. Not recorded platform responses or calibrated platform behavior. All .example handles and repeated-letter DIDs are fictional; no real accounts are queried.",
+    "bounds": "One complete synthetic page per listing; SQL LIMIT retains only a prefix. Thread responses are pruned to requested depth, preserving a missing node to demonstrate that flattened rows are visible posts only. Counts and lists are separate fields of this controlled model."
+  },
+  "anchor_uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+  "profiles": [
+    {
+      "did": "did:plc:pppppppppppppppppppppppp",
+      "handle": "publisher.example",
+      "displayName": "Fixture Publisher",
+      "followersCount": 1600,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+      "handle": "alpha-new.example",
+      "displayName": "Fixture Alpha",
+      "followersCount": 100,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb",
+      "handle": "beta.example",
+      "displayName": "Fixture Beta",
+      "followersCount": null,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:cccccccccccccccccccccccc",
+      "handle": "gamma.example",
+      "displayName": "Fixture Gamma",
+      "followersCount": 300,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:dddddddddddddddddddddddd",
+      "handle": "delta.example",
+      "displayName": "Fixture Delta",
+      "followersCount": 400,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:eeeeeeeeeeeeeeeeeeeeeeee",
+      "handle": "epsilon.example",
+      "displayName": "Fixture Epsilon",
+      "followersCount": 500,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:gggggggggggggggggggggggg",
+      "handle": "nested.example",
+      "displayName": "Fixture Nested",
+      "followersCount": 700,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:ssssssssssssssssssssssss",
+      "handle": "publisher-notes.example",
+      "displayName": "Fixture Publisher-Notes",
+      "followersCount": 1900,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "directory": [
+    {
+      "did": "did:plc:pppppppppppppppppppppppp",
+      "handle": "publisher.example",
+      "displayName": "Fixture Publisher",
+      "followersCount": 1600,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:ssssssssssssssssssssssss",
+      "handle": "publisher-notes.example",
+      "displayName": "Fixture Publisher-Notes",
+      "followersCount": 1900,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "search_posts": [
+    {
+      "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+      "cid": "fixture-survey1",
+      "author": {
+        "did": "did:plc:pppppppppppppppppppppppp",
+        "handle": "publisher.example",
+        "displayName": "Fixture Publisher",
+        "followersCount": 1600,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic field-notes survey: identify the population before counting.",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ]
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 6,
+      "repostCount": 3,
+      "quoteCount": 3,
+      "replyCount": 4
+    },
+    {
+      "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey2",
+      "cid": "fixture-survey2",
+      "author": {
+        "did": "did:plc:pppppppppppppppppppppppp",
+        "handle": "publisher.example",
+        "displayName": "Fixture Publisher",
+        "followersCount": 1600,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic field-notes survey: a different question.",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ]
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 1,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    }
+  ],
+  "posts": [
+    {
+      "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+      "cid": "fixture-survey1",
+      "author": {
+        "did": "did:plc:pppppppppppppppppppppppp",
+        "handle": "publisher.example",
+        "displayName": "Fixture Publisher",
+        "followersCount": 1600,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic field-notes survey: identify the population before counting.",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ]
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 6,
+      "repostCount": 3,
+      "quoteCount": 3,
+      "replyCount": 4
+    },
+    {
+      "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey2",
+      "cid": "fixture-survey2",
+      "author": {
+        "did": "did:plc:pppppppppppppppppppppppp",
+        "handle": "publisher.example",
+        "displayName": "Fixture Publisher",
+        "followersCount": 1600,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic field-notes survey: a different question.",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ]
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 1,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    },
+    {
+      "uri": "at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/quotea",
+      "cid": "fixture-quotea",
+      "author": {
+        "did": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+        "handle": "alpha-new.example",
+        "displayName": "Fixture Alpha",
+        "followersCount": 100,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic quotation a",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "embed": {
+          "$type": "app.bsky.embed.record",
+          "record": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    },
+    {
+      "uri": "at://did:plc:cccccccccccccccccccccccc/app.bsky.feed.post/quotec",
+      "cid": "fixture-quotec",
+      "author": {
+        "did": "did:plc:cccccccccccccccccccccccc",
+        "handle": "gamma.example",
+        "displayName": "Fixture Gamma",
+        "followersCount": 300,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic quotation c",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "embed": {
+          "$type": "app.bsky.embed.record",
+          "record": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    },
+    {
+      "uri": "at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/app.bsky.feed.post/quotee",
+      "cid": "fixture-quotee",
+      "author": {
+        "did": "did:plc:eeeeeeeeeeeeeeeeeeeeeeee",
+        "handle": "epsilon.example",
+        "displayName": "Fixture Epsilon",
+        "followersCount": 500,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic quotation e",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "embed": {
+          "$type": "app.bsky.embed.record",
+          "record": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    },
+    {
+      "uri": "at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/reply1",
+      "cid": "fixture-reply1",
+      "author": {
+        "did": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+        "handle": "alpha-new.example",
+        "displayName": "Fixture Alpha",
+        "followersCount": 100,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic direct reply A.",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "reply": {
+          "root": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          },
+          "parent": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-parent"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    },
+    {
+      "uri": "at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/app.bsky.feed.post/reply2",
+      "cid": "fixture-reply2",
+      "author": {
+        "did": "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb",
+        "handle": "beta.example",
+        "displayName": "Fixture Beta",
+        "followersCount": null,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic direct reply B.",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "reply": {
+          "root": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          },
+          "parent": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-parent"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    },
+    {
+      "uri": "at://did:plc:gggggggggggggggggggggggg/app.bsky.feed.post/reply3",
+      "cid": "fixture-reply3",
+      "author": {
+        "did": "did:plc:gggggggggggggggggggggggg",
+        "handle": "nested.example",
+        "displayName": "Fixture Nested",
+        "followersCount": 700,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic nested reply.",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "reply": {
+          "root": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          },
+          "parent": {
+            "uri": "at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/reply1",
+            "cid": "fixture-parent"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    }
+  ],
+  "likes": [
+    {
+      "createdAt": "2024-06-01T13:00:00Z",
+      "actor": {
+        "did": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+        "handle": "alpha-old.example",
+        "displayName": "Fixture Alpha",
+        "followersCount": 100,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    },
+    {
+      "createdAt": "2024-06-01T13:00:00Z",
+      "actor": {
+        "did": "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb",
+        "handle": "beta.example",
+        "displayName": "Fixture Beta",
+        "followersCount": null,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    },
+    {
+      "createdAt": "2024-06-01T13:00:00Z",
+      "actor": {
+        "did": "did:plc:cccccccccccccccccccccccc",
+        "handle": "gamma.example",
+        "displayName": "Fixture Gamma",
+        "followersCount": 300,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    },
+    {
+      "createdAt": "2024-06-01T13:00:00Z",
+      "actor": {
+        "did": "did:plc:dddddddddddddddddddddddd",
+        "handle": "delta.example",
+        "displayName": "Fixture Delta",
+        "followersCount": 400,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    },
+    {
+      "createdAt": "2024-06-01T13:00:00Z",
+      "actor": {
+        "did": "did:plc:eeeeeeeeeeeeeeeeeeeeeeee",
+        "handle": "epsilon.example",
+        "displayName": "Fixture Epsilon",
+        "followersCount": 500,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    },
+    {
+      "createdAt": "2024-06-01T13:00:00Z",
+      "actor": {
+        "did": "did:plc:gggggggggggggggggggggggg",
+        "handle": "nested.example",
+        "displayName": "Fixture Nested",
+        "followersCount": 700,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      }
+    }
+  ],
+  "repostedBy": [
+    {
+      "did": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+      "handle": "alpha-new.example",
+      "displayName": "Fixture Alpha",
+      "followersCount": 100,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:dddddddddddddddddddddddd",
+      "handle": "delta.example",
+      "displayName": "Fixture Delta",
+      "followersCount": 400,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "did": "did:plc:eeeeeeeeeeeeeeeeeeeeeeee",
+      "handle": "epsilon.example",
+      "displayName": "Fixture Epsilon",
+      "followersCount": 500,
+      "followsCount": 10,
+      "postsCount": 20,
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "quotes": [
+    {
+      "uri": "at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/quotea",
+      "cid": "fixture-quotea",
+      "author": {
+        "did": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+        "handle": "alpha-new.example",
+        "displayName": "Fixture Alpha",
+        "followersCount": 100,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic quotation a",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "embed": {
+          "$type": "app.bsky.embed.record",
+          "record": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    },
+    {
+      "uri": "at://did:plc:cccccccccccccccccccccccc/app.bsky.feed.post/quotec",
+      "cid": "fixture-quotec",
+      "author": {
+        "did": "did:plc:cccccccccccccccccccccccc",
+        "handle": "gamma.example",
+        "displayName": "Fixture Gamma",
+        "followersCount": 300,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic quotation c",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "embed": {
+          "$type": "app.bsky.embed.record",
+          "record": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    },
+    {
+      "uri": "at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/app.bsky.feed.post/quotee",
+      "cid": "fixture-quotee",
+      "author": {
+        "did": "did:plc:eeeeeeeeeeeeeeeeeeeeeeee",
+        "handle": "epsilon.example",
+        "displayName": "Fixture Epsilon",
+        "followersCount": 500,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic quotation e",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ],
+        "embed": {
+          "$type": "app.bsky.embed.record",
+          "record": {
+            "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+            "cid": "fixture-root"
+          }
+        }
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 0,
+      "repostCount": 0,
+      "quoteCount": 0,
+      "replyCount": 0
+    }
+  ],
+  "thread": {
+    "$type": "app.bsky.feed.defs#threadViewPost",
+    "post": {
+      "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+      "cid": "fixture-survey1",
+      "author": {
+        "did": "did:plc:pppppppppppppppppppppppp",
+        "handle": "publisher.example",
+        "displayName": "Fixture Publisher",
+        "followersCount": 1600,
+        "followsCount": 10,
+        "postsCount": 20,
+        "createdAt": "2024-01-01T00:00:00Z"
+      },
+      "record": {
+        "$type": "app.bsky.feed.post",
+        "text": "Synthetic field-notes survey: identify the population before counting.",
+        "createdAt": "2024-06-01T12:00:00Z",
+        "langs": [
+          "en"
+        ]
+      },
+      "indexedAt": "2024-06-01T12:01:00Z",
+      "likeCount": 6,
+      "repostCount": 3,
+      "quoteCount": 3,
+      "replyCount": 4
+    },
+    "replies": [
+      {
+        "$type": "app.bsky.feed.defs#threadViewPost",
+        "post": {
+          "uri": "at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/reply1",
+          "cid": "fixture-reply1",
+          "author": {
+            "did": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+            "handle": "alpha-new.example",
+            "displayName": "Fixture Alpha",
+            "followersCount": 100,
+            "followsCount": 10,
+            "postsCount": 20,
+            "createdAt": "2024-01-01T00:00:00Z"
+          },
+          "record": {
+            "$type": "app.bsky.feed.post",
+            "text": "Synthetic direct reply A.",
+            "createdAt": "2024-06-01T12:00:00Z",
+            "langs": [
+              "en"
+            ],
+            "reply": {
+              "root": {
+                "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+                "cid": "fixture-root"
+              },
+              "parent": {
+                "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+                "cid": "fixture-parent"
+              }
+            }
+          },
+          "indexedAt": "2024-06-01T12:01:00Z",
+          "likeCount": 0,
+          "repostCount": 0,
+          "quoteCount": 0,
+          "replyCount": 0
+        },
+        "replies": [
+          {
+            "$type": "app.bsky.feed.defs#threadViewPost",
+            "post": {
+              "uri": "at://did:plc:gggggggggggggggggggggggg/app.bsky.feed.post/reply3",
+              "cid": "fixture-reply3",
+              "author": {
+                "did": "did:plc:gggggggggggggggggggggggg",
+                "handle": "nested.example",
+                "displayName": "Fixture Nested",
+                "followersCount": 700,
+                "followsCount": 10,
+                "postsCount": 20,
+                "createdAt": "2024-01-01T00:00:00Z"
+              },
+              "record": {
+                "$type": "app.bsky.feed.post",
+                "text": "Synthetic nested reply.",
+                "createdAt": "2024-06-01T12:00:00Z",
+                "langs": [
+                  "en"
+                ],
+                "reply": {
+                  "root": {
+                    "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+                    "cid": "fixture-root"
+                  },
+                  "parent": {
+                    "uri": "at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/reply1",
+                    "cid": "fixture-parent"
+                  }
+                }
+              },
+              "indexedAt": "2024-06-01T12:01:00Z",
+              "likeCount": 0,
+              "repostCount": 0,
+              "quoteCount": 0,
+              "replyCount": 0
+            },
+            "replies": []
+          }
+        ]
+      },
+      {
+        "$type": "app.bsky.feed.defs#threadViewPost",
+        "post": {
+          "uri": "at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/app.bsky.feed.post/reply2",
+          "cid": "fixture-reply2",
+          "author": {
+            "did": "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb",
+            "handle": "beta.example",
+            "displayName": "Fixture Beta",
+            "followersCount": null,
+            "followsCount": 10,
+            "postsCount": 20,
+            "createdAt": "2024-01-01T00:00:00Z"
+          },
+          "record": {
+            "$type": "app.bsky.feed.post",
+            "text": "Synthetic direct reply B.",
+            "createdAt": "2024-06-01T12:00:00Z",
+            "langs": [
+              "en"
+            ],
+            "reply": {
+              "root": {
+                "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+                "cid": "fixture-root"
+              },
+              "parent": {
+                "uri": "at://did:plc:pppppppppppppppppppppppp/app.bsky.feed.post/survey1",
+                "cid": "fixture-parent"
+              }
+            }
+          },
+          "indexedAt": "2024-06-01T12:01:00Z",
+          "likeCount": 0,
+          "repostCount": 0,
+          "quoteCount": 0,
+          "replyCount": 0
+        },
+        "replies": []
+      },
+      {
+        "$type": "app.bsky.feed.defs#notFoundPost",
+        "uri": "at://did:plc:dddddddddddddddddddddddd/app.bsky.feed.post/unavailable",
+        "notFound": true
+      }
+    ]
+  }
+}
