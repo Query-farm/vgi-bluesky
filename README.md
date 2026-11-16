@@ -173,8 +173,10 @@ record as JSON, and posts get their own columns (`text`, `langs`, `hashtags`, â€
 Events carry DIDs, not handles; join to `profile()` or `post()` for those.
 
 **How long it runs.** By default, ten seconds. It stops at the first of
-`seconds`, `max_events`, a `LIMIT`, or an upper bound on `event_time`. With
-`seconds => 0` it streams until you stop it. Rows arrive in batches, closed
+`seconds`, `max_events`, a `LIMIT`, or an upper bound on `event_time`. The
+`seconds` clock starts once the connection is open; connecting has its own
+10-second timeout per attempt and, for a live read, fails over to another
+Jetstream instance. With `seconds => 0` it streams until you stop it. Rows arrive in batches, closed
 every `batch_events` events (default 1000) or `batch_ms` milliseconds (default
 1000), whichever comes first.
 

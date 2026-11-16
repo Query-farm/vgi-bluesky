@@ -8,6 +8,7 @@ what says which assumption broke. Opt in with ``pytest -m live``.
 from __future__ import annotations
 
 import itertools
+from collections.abc import Callable
 
 import httpx
 import pytest
@@ -103,25 +104,12 @@ class TestJetstream:
     """The Jetstream behaviours jetstream() is built on."""
 
     @staticmethod
-    def _read_raw(url: str, n: int, seconds: float = 8.0) -> list[str | bytes]:
-        import contextlib
-        import time
-
-        from websockets.sync.client import connect
-
-        messages: list[str | bytes] = []
-        deadline = time.time() + seconds
-        with connect(url, open_timeout=10, close_timeout=0.5, max_size=None) as socket:
-            while len(messages) < n and time.time() < deadline:
-                with contextlib.suppress(TimeoutError):
-                    messages.append(socket.recv(timeout=1))
-        return messages
-
-    @classmethod
-    def _read(cls, url: str, n: int, seconds: float = 8.0) -> list[dict]:
+    def _read(url_for: Callable[[str], str], n: int) -> list[dict]:
         import json
 
-        return [json.loads(m) for m in cls._read_raw(url, n, seconds)]
+        from jetstream_live import read_raw
+
+        return [json.loads(m) for m in read_raw(url_for, n)[1]]
 
     def test_time_us_never_decreases_and_ties_are_one_commit(self) -> None:
         """Why an upper bound on event_time is a safe stopping rule, and why time_us is not unique.
@@ -130,9 +118,9 @@ class TestJetstream:
         time_us, so ties are expected (1-7% of adjacent pairs) — but only within
         one commit, and the clock never steps back.
         """
-        from vgi_bluesky.jetstream import JETSTREAM_HOSTS, subscribe_url
+        from vgi_bluesky.jetstream import subscribe_url
 
-        events = self._read(subscribe_url(JETSTREAM_HOSTS[0], collections=[], dids=[], cursor=0), 500)
+        events = self._read(lambda h: subscribe_url(h, collections=[], dids=[], cursor=0), 500)
         assert len(events) > 100
         for a, b in itertools.pairwise(events):
             assert a["time_us"] <= b["time_us"]
@@ -145,32 +133,37 @@ class TestJetstream:
         import json
         import time
 
-        from vgi_bluesky.jetstream import JETSTREAM_HOSTS, subscribe_url
+        from jetstream_live import read_raw
+
+        from vgi_bluesky.jetstream import subscribe_url
 
         start = int((time.time() - 300) * 1_000_000)
-        raw = self._read_raw(subscribe_url(JETSTREAM_HOSTS[0], collections=[], dids=[], cursor=start), 2000)
+        host, raw = read_raw(lambda h: subscribe_url(h, collections=[], dids=[], cursor=start), 2000)
         counts = collections.Counter(json.loads(m)["time_us"] for m in raw)
         tie = next((t for t, n in counts.items() if n > 1), None)
         assert tie is not None, "no multi-op commit in 2000 events"
         group = [m for m in raw if json.loads(m)["time_us"] == tie]
-        replay = self._read_raw(
-            subscribe_url(JETSTREAM_HOSTS[0], collections=[], dids=[], cursor=tie), len(group)
+        # The same instance: a cursor is a point on its own clock.
+        _host, replay = read_raw(
+            lambda h: subscribe_url(h, collections=[], dids=[], cursor=tie), len(group), hosts=[host]
         )
         assert replay == group
 
     def test_a_collection_filter_is_a_superset(self) -> None:
         """Only commits are filtered; nothing of the wanted collection is withheld."""
-        from vgi_bluesky.jetstream import JETSTREAM_HOSTS, subscribe_url
+        from vgi_bluesky.jetstream import subscribe_url
 
-        url = subscribe_url(JETSTREAM_HOSTS[0], collections=["app.bsky.graph.follow"], dids=[], cursor=0)
+        def url(host: str) -> str:
+            return subscribe_url(host, collections=["app.bsky.graph.follow"], dids=[], cursor=0)
+
         commits = [e for e in self._read(url, 200) if e.get("kind") == "commit"]
         assert commits and {e["commit"]["collection"] for e in commits} == {"app.bsky.graph.follow"}
 
     def test_replay_starts_at_the_cursor(self) -> None:
         import time
 
-        from vgi_bluesky.jetstream import JETSTREAM_HOSTS, subscribe_url
+        from vgi_bluesky.jetstream import subscribe_url
 
         cursor = int((time.time() - 600) * 1_000_000)
-        events = self._read(subscribe_url(JETSTREAM_HOSTS[0], collections=[], dids=[], cursor=cursor), 5)
+        events = self._read(lambda h: subscribe_url(h, collections=[], dids=[], cursor=cursor), 5)
         assert events and cursor <= events[0]["time_us"] < cursor + 5_000_000

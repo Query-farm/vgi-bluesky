@@ -7,7 +7,9 @@ filterable by collection and by DID, and replayable from a microsecond cursor.
 It needs no credentials.
 
 A firehose never ends. By default the scan is bounded by a wall-clock budget
-(``seconds``), and optionally by ``max_events``, a pushed-down upper bound on
+(``seconds``) that starts once the connection is open — connecting has its own
+bound, ``_OPEN_TIMEOUT`` per attempt with failover between instances for a
+live read — and optionally by ``max_events``, a pushed-down upper bound on
 ``event_time`` / ``time_us``, or a ``LIMIT``. With ``seconds => 0`` it is not:
 it streams a batch per tick until the caller stops asking. Either way each
 ``process()`` tick reads one batch — ``batch_events`` events or ``batch_ms`` of time,
@@ -220,7 +222,7 @@ class JetstreamState(ArrowSerializableDataclass):
     cursor: int = 0
     #: Comma-separated digests of the events emitted at ``cursor``.
     cursor_seen: str = ""
-    #: ``time.time()`` when the first tick ran; the ``seconds`` budget counts from here.
+    #: ``time.time()`` when the first connection opened; the ``seconds`` budget counts from here.
     started_at: float = 0.0
     events: int = 0
     done: bool = False
@@ -253,8 +255,8 @@ class JetstreamArgs:
         int,
         Arg(
             "seconds",
-            doc="How long to listen, wall-clock, before the scan ends (0 = never: stream "
-            "batches until the caller stops asking)",
+            doc="How long to listen, wall-clock from when the connection opens, before the scan "
+            "ends (0 = never: stream batches until the caller stops asking)",
             default=10,
             ge=0,
         ),
@@ -493,7 +495,9 @@ JETSTREAM_DOCS = docs(
         "### How long it runs\n\n"
         "It stops at the first of: `seconds` of wall-clock listening (default 10), `max_events`, "
         "a `LIMIT`, or an upper bound on `event_time` / `time_us` in the WHERE clause. Rows arrive "
-        "about once a second while it listens.\n\n"
+        "about once a second while it listens. The `seconds` clock starts once the connection is "
+        "open, so connecting is not counted: each attempt times out after 10 seconds, and a live "
+        "read moves on to another Jetstream instance (a read with a cursor stays on its own).\n\n"
         "### Running without an end\n\n"
         "`seconds => 0` streams until the query is cancelled, one batch per `batch_ms`. From a "
         "DuckDB client, run `SET streaming_buffer_size = '1KB'` and `SET "
@@ -620,14 +624,18 @@ class JetstreamFunction(TableFunctionGenerator[JetstreamArgs, JetstreamState]):
             return
         if not state.query_json:
             state.query_json = json.dumps(_initial_query(params), sort_keys=True)
-            state.started_at = time.time()
         query = json.loads(state.query_json)
         args = params.args
-        deadline = state.started_at + args.seconds if args.seconds else float("inf")
         stop_us = int(query["stop"])
         cap = args.max_events
 
         socket = _socket_for(state, query, args.batch_ms / 1000)
+        if not state.started_at:
+            # `seconds` is listening time: it starts once the first connection is
+            # open, so a slow handshake or a failover cannot spend the budget.
+            # Connecting has its own bound (`_OPEN_TIMEOUT` per attempt).
+            state.started_at = time.time()
+        deadline = state.started_at + args.seconds if args.seconds else float("inf")
         rows: list[dict[str, Any]] = []
         past_last_commit = False
         tick_end = min(time.time() + args.batch_ms / 1000, deadline)

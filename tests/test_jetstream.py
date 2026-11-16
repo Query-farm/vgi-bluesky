@@ -259,6 +259,37 @@ def sockets(monkeypatch: pytest.MonkeyPatch) -> _Sockets:
     return opened
 
 
+class _Clock:
+    """``time.time()`` for the module under test, advanced only by the fakes."""
+
+    def __init__(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self.now = 0.0
+        monkeypatch.setattr(jetstream.time, "time", lambda: self.now)
+
+
+class _ClockedSocket(_FakeSocket):
+    """A socket whose idle waits take (fake) time, as a real recv(timeout) does."""
+
+    def __init__(self, clock: _Clock, messages: list[Any]) -> None:
+        super().__init__(messages)
+        self.clock = clock
+
+    def recv(self, timeout: float | None = None) -> str:
+        if not self.messages:
+            self.clock.now += timeout or 0.0
+        return super().recv(timeout)
+
+
+def _slow_connect(clock: _Clock, sockets: _Sockets, seconds: float) -> Any:
+    def connect(url: str, **_: Any) -> _FakeSocket:
+        clock.now += seconds
+        socket = sockets.queue.pop(0)
+        sockets.append((url, socket))
+        return socket
+
+    return connect
+
+
 def _run(params: _Params, ticks: int = 10) -> tuple[_Out, JetstreamState]:
     state = JetstreamFunction.initial_state(params)  # type: ignore[arg-type]
     out = _Out()
@@ -340,6 +371,38 @@ class TestTickLoop:
         out, state = _run(_Params(args=JetstreamArgs(seconds=1, batch_ms=50)))
         assert state.done and out.finished and _times(out) == []
 
+    def test_the_budget_starts_once_the_connection_is_open(
+        self, sockets: _Sockets, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A 5-second handshake does not spend a 3-second listen."""
+        clock = _Clock(monkeypatch)
+        sockets.queue.append(_ClockedSocket(clock, [_commit(1), _commit(2)]))
+        monkeypatch.setattr(jetstream, "connect", _slow_connect(clock, sockets, seconds=5))
+        out, state = _run(_Params(args=JetstreamArgs(seconds=3, batch_ms=500)), ticks=50)
+        assert _times(out) == [1, 2] and state.done and out.finished
+        assert state.started_at == 5.0
+        assert clock.now <= 5.0 + 3 + 1, "the listen itself still ends on budget"
+
+    def test_a_dead_instance_costs_one_connect_timeout_not_the_budget(
+        self, sockets: _Sockets, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A live read fails over after one bounded attempt and still listens for its full budget."""
+        clock = _Clock(monkeypatch)
+        attempts: list[str] = []
+
+        def first_host_hangs(url: str, open_timeout: float, **_: Any) -> Any:
+            attempts.append(url)
+            if len(attempts) == 1:
+                clock.now += open_timeout
+                raise TimeoutError("timed out during opening handshake")
+            return _ClockedSocket(clock, [_commit(1)])
+
+        monkeypatch.setattr(jetstream, "connect", first_host_hangs)
+        out, state = _run(_Params(args=JetstreamArgs(seconds=3, batch_ms=500)), ticks=50)
+        assert _times(out) == [1] and state.done
+        assert [u.split("/subscribe")[0] for u in attempts] == list(jetstream.hosts()[:2])
+        assert state.started_at == jetstream._OPEN_TIMEOUT
+
     def test_the_pushed_start_is_the_first_cursor(self, sockets: _Sockets) -> None:
         sockets.queue.append(_FakeSocket([_commit(US0 + 1)]))
         params = _Params(
@@ -397,3 +460,45 @@ class TestTickLoop:
         monkeypatch.setattr(jetstream, "connect", blip)
         out, _state = _run(_Params(args=JetstreamArgs(cursor=5, max_events=1, batch_ms=50)))
         assert _times(out) == [7] and len(attempts) == 3
+
+
+class TestLiveReader:
+    """The live tests' own Jetstream reader fails over, so one unreachable instance is not a red run."""
+
+    def test_moves_on_from_an_instance_that_will_not_open(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import jetstream_live
+
+        tried: list[str] = []
+
+        def connect(url: str, **_: Any) -> Any:
+            tried.append(url)
+            if len(tried) == 1:
+                raise TimeoutError("timed out during opening handshake")
+            return _ContextSocket([_commit(1), _commit(2)])
+
+        monkeypatch.setattr(jetstream_live, "connect", connect)
+        host, messages = jetstream_live.read_raw(lambda h: f"{h}/subscribe", 2, hosts=["wss://a", "wss://b"])
+        assert host == "wss://b" and tried == ["wss://a/subscribe", "wss://b/subscribe"]
+        assert [json.loads(m)["time_us"] for m in messages] == [1, 2]
+
+    def test_gives_up_after_two_rounds(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import jetstream_live
+
+        tried: list[str] = []
+
+        def refuse(url: str, **_: Any) -> Any:
+            tried.append(url)
+            raise OSError("unreachable")
+
+        monkeypatch.setattr(jetstream_live, "connect", refuse)
+        with pytest.raises(ConnectionError, match="unreachable"):
+            jetstream_live.read_raw(lambda h: h, 1, hosts=["wss://a", "wss://b"])
+        assert tried == ["wss://a", "wss://b"] * jetstream_live.ROUNDS
+
+
+class _ContextSocket(_FakeSocket):
+    def __enter__(self) -> _ContextSocket:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()

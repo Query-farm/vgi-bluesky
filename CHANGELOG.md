@@ -11,6 +11,14 @@
   content, and a scan ended by `max_events` or `seconds` finishes the commit
   it is in, so `cursor => <last time_us>` still resumes without a gap.
 
+### Changed
+
+- `jetstream(seconds => N)` now counts the N seconds from when the connection
+  opens, not from the first tick, so a slow handshake or a failover no longer
+  eats the budget (a 3-second scan behind a slow connect returned no rows).
+  Connecting stays separately bounded: a 10-second timeout per attempt, with
+  failover between Jetstream instances for a live read.
+
 ## 0.4.0
 
 ### Changed
