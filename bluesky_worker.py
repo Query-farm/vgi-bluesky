@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python[http,duckdb]>=0.52.0",
+#     "vgi-python[http,duckdb]>=0.52.2,<0.53",
 #     "numpy>=2.0",
 #     "vgi-rpc>=0.53.1",
 #     "httpx>=0.28.1",
