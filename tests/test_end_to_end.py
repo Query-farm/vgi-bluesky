@@ -136,10 +136,20 @@ class TestJetstream:
     def test_the_budget_bounds_the_scan(self, con: Any) -> None:
         import time
 
+        from vgi_bluesky.jetstream import _OPEN_TIMEOUT
+
         started = time.time()
-        (count,) = con.execute("SELECT count(*) FROM bluesky.main.jetstream(seconds => 3)").fetchone()
+        (count, span) = con.execute(
+            "SELECT count(*), epoch(max(event_time)) - epoch(min(event_time)) "
+            "FROM bluesky.main.jetstream(seconds => 3)"
+        ).fetchone()
+        elapsed = time.time() - started
         assert count > 0
-        assert time.time() - started < 6, "the scan overran its three-second budget"
+        # The budget is listening time, from when the connection opens: the events
+        # span at most three seconds, and connecting adds at most one bounded
+        # attempt that fails over to another instance.
+        assert span < 3 + 1, "the scan listened past its three-second budget"
+        assert elapsed < 3 + _OPEN_TIMEOUT + 5, "the scan overran its budget plus one connect timeout"
 
     def test_a_limit_ends_a_long_listen_early(self, con: Any) -> None:
         import time
