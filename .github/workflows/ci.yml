@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # The SQL test runner; must speak the same VGI protocol as the SDK.
+  HAYBARN_VERSION: "2.0.0rc11"
   # pyproject deliberately carries no `[tool.uv.sources]`, so a fresh clone
   # resolves from PyPI. This pins that shut: if a local path source is ever
   # added, CI still proves the *published* dependencies are sufficient — the
@@ -37,6 +39,41 @@ jobs:
         run: |
           uv run --no-project bluesky_worker.py --help > /dev/null
           uv run --no-project serve.py --help > /dev/null
+
+  # test/sql/*.test through DuckDB (the pinned haybarn-unittest + the signed
+  # community `vgi` extension) over every transport, via ci/run-integration.sh --
+  # the same script `make test-sql` runs. It serves the API from the local mock
+  # (test/mock_api/server.py), so nothing here reaches the live API.
+  integration:
+    name: SQL tests (${{ matrix.os }}, ${{ matrix.transport }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        # launch: DuckDB starts the worker once on an AF_UNIX socket and pools it.
+        transport: [stdio, launch, http]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+      - name: Build the worker
+        run: uv sync --no-sources --all-extras
+      - name: Install the SQL test runner
+        run: |
+          uv venv .tools
+          uv pip install -p .tools "haybarn-unittest==${HAYBARN_VERSION}"
+      - name: Run test/sql over ${{ matrix.transport }}
+        run: |
+          export WORKER="$PWD/ci/worker"
+          export HAYBARN_UNITTEST="$PWD/.tools/bin/haybarn-unittest"
+          TRANSPORT=${{ matrix.transport }} PYTHON="uv run --no-project python" ci/run-integration.sh
 
   catalog:
     name: Catalog metadata (vgi-lint, structural)

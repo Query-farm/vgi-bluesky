@@ -1,0 +1,136 @@
+# name: test/sql/posts.test
+# description: post, thread, author_feed, likes, reposted_by, quotes
+# group: [bluesky]
+#
+# Runs offline against the synthetic AppView (test/mock_api/server.py) through
+# ci/run-integration.sh. Its lists page at 2 rows, so every multi-row listing
+# below also walks the worker's cursor.
+
+require vgi
+
+require-env VGI_BLUESKY_WORKER
+
+require-env BLUESKY_APPVIEW_URL
+
+require-env BLUESKY_SEARCH_URL
+
+statement ok
+ATTACH 'bluesky' (TYPE vgi, LOCATION '{VGI_BLUESKY_WORKER}');
+
+query TTTIIIITTTT
+SELECT author_handle, text, created_at::TIMESTAMP, reply_count, repost_count, like_count, quote_count, langs, hashtags, links, post_url FROM bluesky.main.post('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root');
+----
+alice.test	DuckDB 2.0 is out #duckdb	2026-09-01 10:00:00	1	1	2	1	[en]	[duckdb]	['https://duckdb.org']	https://bsky.app/profile/alice.test/post/3root
+
+# A bsky.app URL with a handle resolves to the same post.
+query T
+SELECT uri FROM bluesky.main.post('https://bsky.app/profile/alice.test/post/3root');
+----
+at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root
+
+query TTTT
+SELECT author_handle, reply_parent_uri, reply_root_uri, mentions FROM bluesky.main.post('at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/app.bsky.feed.post/3reply');
+----
+bob.test	at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root	at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root	['did:plc:aaaaaaaaaaaaaaaaaaaaaaaa']
+
+query TTI
+SELECT embed_type, langs, image_count FROM bluesky.main.post('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3solo');
+----
+images	[en, de]	2
+
+query TT
+SELECT embed_type, quoted_uri FROM bluesky.main.post('at://did:plc:cccccccccccccccccccccccc/app.bsky.feed.post/3quote');
+----
+record	at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root
+
+query I
+SELECT count(*) FROM bluesky.main.post('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/nope');
+----
+0
+
+# post() is a lookup: a value that is not a post reference yields no row.
+query I
+SELECT count(*) FROM bluesky.main.post('not a post');
+----
+0
+
+query IT
+SELECT depth, author_handle FROM bluesky.main.thread('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root') ORDER BY depth;
+----
+0	alice.test
+1	bob.test
+2	carol.test
+
+query IT
+SELECT depth, author_handle FROM bluesky.main.thread('at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/app.bsky.feed.post/3reply') ORDER BY depth;
+----
+-1	alice.test
+0	bob.test
+1	carol.test
+
+query I
+SELECT count(*) FROM bluesky.main.thread('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root', depth => 1);
+----
+2
+
+query I
+SELECT count(*) FROM bluesky.main.thread('at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/app.bsky.feed.post/3reply', parent_height => 0, depth => 0);
+----
+1
+
+statement error
+SELECT * FROM bluesky.main.thread('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root', depth => -1);
+----
+<REGEX>:.*Argument 'depth' is too small.*
+
+query TTT
+SELECT author_handle, text, reason FROM bluesky.main.author_feed('alice.test');
+----
+alice.test	DuckDB 2.0 is out #duckdb	NULL
+alice.test	Parquet tips for the weekend	NULL
+
+query TTTT
+SELECT author_handle, reason, reposted_by_handle, reposted_at::TIMESTAMP FROM bluesky.main.author_feed('dave.test');
+----
+alice.test	repost	dave.test	2026-09-01 16:00:00
+
+query I
+SELECT count(*) FROM bluesky.main.author_feed('carol.test', filter => 'posts_no_replies');
+----
+1
+
+statement error
+SELECT * FROM bluesky.main.author_feed('carol.test', filter => 'everything');
+----
+<REGEX>:.*Argument 'filter' has an invalid value.*
+
+statement error
+SELECT * FROM bluesky.main.author_feed('nobody.test');
+----
+<REGEX>:.*No Bluesky account 'nobody.test'.*
+
+query TTT
+SELECT subject_uri, handle, interacted_at::TIMESTAMP FROM bluesky.main.likes('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root') ORDER BY handle;
+----
+at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root	bob.test	2026-09-01 13:00:00
+at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root	carol.test	2026-09-01 14:00:00
+
+query TT
+SELECT handle, interacted_at FROM bluesky.main.reposted_by('https://bsky.app/profile/alice.test/post/3root');
+----
+dave.test	NULL
+
+query TT
+SELECT author_handle, quoted_uri FROM bluesky.main.quotes('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root');
+----
+carol.test	at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3root
+
+query I
+SELECT count(*) FROM bluesky.main.likes('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.post/3solo');
+----
+0
+
+statement error
+SELECT * FROM bluesky.main.likes('https://example.com/nope');
+----
+<REGEX>:.*is not a post reference.*

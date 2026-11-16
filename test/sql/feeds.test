@@ -1,0 +1,83 @@
+# name: test/sql/feeds.test
+# description: feeds, trends and jetstream argument checks
+# group: [bluesky]
+#
+# Runs offline against the synthetic AppView (test/mock_api/server.py) through
+# ci/run-integration.sh. Its lists page at 2 rows, so every multi-row listing
+# below also walks the worker's cursor.
+
+require vgi
+
+require-env VGI_BLUESKY_WORKER
+
+require-env BLUESKY_APPVIEW_URL
+
+require-env BLUESKY_SEARCH_URL
+
+statement ok
+ATTACH 'bluesky' (TYPE vgi, LOCATION '{VGI_BLUESKY_WORKER}');
+
+query TTTITT
+SELECT display_name, creator_handle, service_did, like_count, content_mode, feed_url FROM bluesky.main.actor_feeds('alice.test') ORDER BY display_name;
+----
+Duck News	alice.test	did:web:feeds.alice.example	42	NULL	https://bsky.app/profile/alice.test/feed/duck-news
+Parquet Pics	alice.test	did:web:feeds.alice.example	7	contentModeVideo	https://bsky.app/profile/alice.test/feed/parquet
+
+query I
+SELECT count(*) FROM bluesky.main.actor_feeds('bob.test');
+----
+0
+
+query T
+SELECT display_name FROM bluesky.main.popular_feeds() ORDER BY display_name;
+----
+Duck News
+Parquet Pics
+
+query T
+SELECT display_name FROM bluesky.main.popular_feeds(query => 'video');
+----
+Parquet Pics
+
+query TT
+SELECT author_handle, text FROM bluesky.main.feed('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.generator/duck-news');
+----
+alice.test	DuckDB 2.0 is out #duckdb
+carol.test	Worth reading
+
+query I
+SELECT count(*) FROM bluesky.main.feed('https://bsky.app/profile/alice.test/feed/parquet');
+----
+1
+
+statement error
+SELECT * FROM bluesky.main.feed('at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.bsky.feed.generator/missing');
+----
+<REGEX>:.*UnknownFeed.*
+
+statement error
+SELECT * FROM bluesky.main.feed('not a feed');
+----
+<REGEX>:.*is not a feed reference.*
+
+query ITTTITT
+SELECT rank, topic, display_name, status, post_count, actor_handles, trend_url FROM bluesky.main.trends ORDER BY rank;
+----
+1	duckdb-2	DuckDB 2.0	hot	1200	[alice.test, bob.test]	https://bsky.app/profile/trending.bsky.app/feed/duckdb-2
+2	parquet	Parquet	cooling	300	[]	https://bsky.app/profile/trending.bsky.app/feed/parquet
+
+query I
+SELECT (SELECT count(*) FROM bluesky.main.trends) = (SELECT count(*) FROM bluesky.main.all_trends());
+----
+true
+
+# jetstream() has no offline mock; only its argument checks run here.
+statement error
+SELECT * FROM bluesky.main.jetstream(batch_ms => 1);
+----
+<REGEX>:.*Argument 'batch_ms' is too small.*
+
+statement error
+SELECT * FROM bluesky.main.jetstream(batch_events => 0);
+----
+<REGEX>:.*Argument 'batch_events' is too small.*

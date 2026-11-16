@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# The single worker executable ci/run-integration.sh drives: no arguments =
+# stdio, `--http --port 0` = HTTP (prints PORT:<n>), and the SDK's own launch
+# (unix socket) mode. Runs bluesky_worker.py from the project venv.
+set -euo pipefail
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+exec "$REPO/.venv/bin/python" "$REPO/bluesky_worker.py" "$@"

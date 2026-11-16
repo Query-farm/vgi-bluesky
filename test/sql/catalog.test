@@ -1,0 +1,43 @@
+# name: test/sql/catalog.test
+# description: The catalog's table and functions are advertised
+# group: [bluesky]
+#
+# Runs offline against the synthetic AppView (test/mock_api/server.py) through
+# ci/run-integration.sh. Its lists page at 2 rows, so every multi-row listing
+# below also walks the worker's cursor.
+
+require vgi
+
+require-env VGI_BLUESKY_WORKER
+
+require-env BLUESKY_APPVIEW_URL
+
+require-env BLUESKY_SEARCH_URL
+
+statement ok
+ATTACH 'bluesky' (TYPE vgi, LOCATION '{VGI_BLUESKY_WORKER}');
+
+query T
+SELECT table_name FROM duckdb_tables() WHERE database_name = 'bluesky' ORDER BY table_name;
+----
+trends
+
+query T
+SELECT DISTINCT function_name FROM duckdb_functions() WHERE database_name = 'bluesky' ORDER BY function_name;
+----
+actor_feeds
+all_trends
+author_feed
+feed
+followers
+follows
+jetstream
+likes
+popular_feeds
+post
+profile
+quotes
+reposted_by
+search_actors
+search_posts
+thread

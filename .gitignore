@@ -19,3 +19,4 @@ venv/
 
 # macOS Finder metadata
 .DS_Store
+.tools/

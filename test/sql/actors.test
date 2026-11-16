@@ -1,0 +1,90 @@
+# name: test/sql/actors.test
+# description: profile, search_actors, followers, follows
+# group: [bluesky]
+#
+# Runs offline against the synthetic AppView (test/mock_api/server.py) through
+# ci/run-integration.sh. Its lists page at 2 rows, so every multi-row listing
+# below also walks the worker's cursor.
+
+require vgi
+
+require-env VGI_BLUESKY_WORKER
+
+require-env BLUESKY_APPVIEW_URL
+
+require-env BLUESKY_SEARCH_URL
+
+statement ok
+ATTACH 'bluesky' (TYPE vgi, LOCATION '{VGI_BLUESKY_WORKER}');
+
+query TTTIIIIITT
+SELECT actor, did, display_name, followers_count, follows_count, posts_count, feeds_count, starter_packs_count, is_labeler, verified_status FROM bluesky.main.profile('alice.test');
+----
+alice.test	did:plc:aaaaaaaaaaaaaaaaaaaaaaaa	Alice Analyst	3	1	2	2	0	false	valid
+
+# Every accepted actor form; the input is echoed back as written.
+query TT
+SELECT actor, handle FROM bluesky.main.profile('@Alice.Test');
+----
+@Alice.Test	alice.test
+
+query TT
+SELECT actor, handle FROM bluesky.main.profile('https://bsky.app/profile/bob.test');
+----
+https://bsky.app/profile/bob.test	bob.test
+
+query T
+SELECT handle FROM bluesky.main.profile('did:plc:cccccccccccccccccccccccc');
+----
+carol.test
+
+# An unknown account is no row, not an error.
+query I
+SELECT count(*) FROM bluesky.main.profile('nobody.test');
+----
+0
+
+query TTT
+SELECT p.handle, p.website, p.labels FROM (VALUES ('alice.test'), ('carol.test'), ('ghost.test')) v(a), LATERAL bluesky.main.profile(v.a) p ORDER BY p.handle;
+----
+alice.test	https://alice.example	[]
+carol.test	NULL	[!no-unauthenticated]
+
+query TTT
+SELECT handle, display_name, profile_url FROM bluesky.main.search_actors('duck') ORDER BY handle;
+----
+alice.test	Alice Analyst	https://bsky.app/profile/alice.test
+dave.test	Dave Duck	https://bsky.app/profile/dave.test
+
+# Four matches at two per page: the cursor is followed.
+query I
+SELECT count(*) FROM bluesky.main.search_actors('.test');
+----
+4
+
+query I
+SELECT count(*) FROM (SELECT * FROM bluesky.main.search_actors('.test') LIMIT 1);
+----
+1
+
+query TTT
+SELECT subject_handle, handle, created_at::TIMESTAMP FROM bluesky.main.followers('alice.test') ORDER BY handle;
+----
+alice.test	bob.test	2024-02-03 00:00:00
+alice.test	carol.test	2024-03-04 00:00:00
+alice.test	dave.test	2024-04-05 00:00:00
+
+query TT
+SELECT subject_did, handle FROM bluesky.main.follows('bob.test');
+----
+did:plc:bbbbbbbbbbbbbbbbbbbbbbbb	alice.test
+
+statement error
+SELECT * FROM bluesky.main.followers('nobody.test');
+----
+<REGEX>:.*No Bluesky account 'nobody.test'.*
+
+statement error
+SELECT * FROM bluesky.main.follows('not an actor!');
+----
+<REGEX>:.*not a Bluesky account identifier.*

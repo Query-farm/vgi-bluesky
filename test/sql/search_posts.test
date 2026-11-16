@@ -1,0 +1,74 @@
+# name: test/sql/search_posts.test
+# description: search_posts: named narrowing arguments and pushed-down filters
+# group: [bluesky]
+#
+# Runs offline against the synthetic AppView (test/mock_api/server.py) through
+# ci/run-integration.sh. Its lists page at 2 rows, so every multi-row listing
+# below also walks the worker's cursor.
+
+require vgi
+
+require-env VGI_BLUESKY_WORKER
+
+require-env BLUESKY_APPVIEW_URL
+
+require-env BLUESKY_SEARCH_URL
+
+statement ok
+ATTACH 'bluesky' (TYPE vgi, LOCATION '{VGI_BLUESKY_WORKER}');
+
+# Newest first.
+query TT
+SELECT author_handle, text FROM bluesky.main.search_posts('a');
+----
+carol.test	Worth reading
+carol.test	Agreed
+bob.test	Congrats @alice.test!
+alice.test	Parquet tips for the weekend
+
+query T
+SELECT text FROM bluesky.main.search_posts('duckdb');
+----
+DuckDB 2.0 is out #duckdb
+
+query T
+SELECT text FROM bluesky.main.search_posts('', author => 'alice.test') ORDER BY text;
+----
+DuckDB 2.0 is out #duckdb
+Parquet tips for the weekend
+
+query T
+SELECT text FROM bluesky.main.search_posts('', lang => 'de');
+----
+Parquet tips for the weekend
+
+query T
+SELECT text FROM bluesky.main.search_posts('', since => '2026-09-01T11:30:00Z', until => '2026-09-02T00:00:00Z');
+----
+Agreed
+
+query T
+SELECT author_handle FROM bluesky.main.search_posts('', sort => 'top') LIMIT 1;
+----
+alice.test
+
+# An equality on author_handle is pushed to the API -- and still holds.
+query T
+SELECT text FROM bluesky.main.search_posts('') WHERE author_handle = 'bob.test';
+----
+Congrats @alice.test!
+
+query I
+SELECT count(*) FROM bluesky.main.search_posts('') WHERE like_count < 0;
+----
+0
+
+query I
+SELECT count(*) FROM bluesky.main.search_posts('') WHERE created_at < TIMESTAMPTZ '2026-09-01 00:00:00+00';
+----
+1
+
+statement error
+SELECT * FROM bluesky.main.search_posts('duckdb', sort => 'oldest');
+----
+<REGEX>:.*Argument 'sort' has an invalid value.*
