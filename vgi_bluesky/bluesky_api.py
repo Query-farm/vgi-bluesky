@@ -360,7 +360,7 @@ def actor_error(exc: BlueskyError, actor: str, *, client: httpx.Client | None = 
     if not actor.startswith("did:") and (term := actor.split(".")[0].strip()):
         try:
             found = _get("app.bsky.actor.searchActors", {"q": term, "limit": 3}, client=client)
-        except (BlueskyError, httpx.HTTPError):
+        except BlueskyError, httpx.HTTPError:
             found = {}
         suggestions = [
             (str(a["handle"]), str(a.get("displayName") or ""))

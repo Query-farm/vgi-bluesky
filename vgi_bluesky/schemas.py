@@ -57,7 +57,7 @@ def to_timestamp(value: Any) -> datetime | None:
     else:
         try:
             parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        except (ValueError, OverflowError):
+        except ValueError, OverflowError:
             return None
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
@@ -75,7 +75,7 @@ def to_integer(value: Any) -> int | None:
         return None
     try:
         return int(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 
@@ -85,7 +85,7 @@ def _nullable_nested(value: Any, kind: pa.DataType) -> Any:
         return None
     try:
         pa.array([value], type=kind)
-    except (pa.ArrowInvalid, pa.ArrowTypeError, TypeError, ValueError, OverflowError):
+    except pa.ArrowInvalid, pa.ArrowTypeError, TypeError, ValueError, OverflowError:
         return None
     return value
 
@@ -108,7 +108,7 @@ def column(rows: Sequence[dict[str, Any]], key: str, f: pa.Field) -> pa.Array:
         return pa.array([None if v is None else str(v) for v in values], type=f.type)
     try:
         return pa.array(values, type=f.type)
-    except (pa.ArrowInvalid, pa.ArrowTypeError, TypeError, ValueError, OverflowError):
+    except pa.ArrowInvalid, pa.ArrowTypeError, TypeError, ValueError, OverflowError:
         return pa.array([_nullable_nested(v, f.type) for v in values], type=f.type)
 
 

@@ -15,7 +15,7 @@
 <p align="center">
   <a href="https://github.com/Query-farm/vgi-bluesky/actions/workflows/ci.yml"><img src="https://github.com/Query-farm/vgi-bluesky/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/python-3.13%2B-blue.svg" alt="Python 3.13+">
+  <img src="https://img.shields.io/badge/python-3.14%2B-blue.svg" alt="Python 3.14+">
   <a href="https://query.farm/vgi/"><img src="https://img.shields.io/badge/VGI-Vector%20Gateway%20Interface-2f7d32.svg" alt="VGI"></a>
 </p>
 

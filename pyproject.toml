@@ -13,13 +13,12 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Database",
     "Topic :: Communications",
     "Typing :: Typed",
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     # The SDK needs its pinned DuckDB 1.5 filter evaluator inside the worker.
     # Native SQL tests use Haybarn 2.0 separately as the VGI 3.3 client.
@@ -73,7 +72,7 @@ path = "vgi_bluesky/__init__.py"
 
 [tool.ruff]
 line-length = 110
-target-version = "py313"
+target-version = "py314"
 
 # Selected explicitly rather than left to the default set, which changes between
 # ruff releases, so CI and a developer's shell reach the same conclusion.

@@ -410,7 +410,7 @@ def _parse(message: str | bytes) -> dict[str, Any] | None:
     """One Jetstream message as an event with an integer ``time_us``, else ``None``."""
     try:
         event = json.loads(message)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
     if not isinstance(event, dict) or not isinstance(event.get("time_us"), int):
         return None
@@ -457,7 +457,7 @@ def _finish_commit(socket: ClientConnection, state: JetstreamState, rows: list[d
     while (remaining := end - time.time()) > 0:
         try:
             message = socket.recv(timeout=remaining)
-        except (TimeoutError, ConnectionClosed):
+        except TimeoutError, ConnectionClosed:
             return
         event = _parse(message)
         if event is None:
