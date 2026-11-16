@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2 (2026-11-16)
+
+- Python 3.14: the floor, CI and tooling move to Python 3.14.
+- SQL tests: an offline test/sql suite (5 files) runs through DuckDB against a local mock of the API, over the stdio, launch and http transports (`make test-sql`, CI `integration` matrix).
+
 ## 0.4.1 (2026-11-16)
 
 - Bump vgi-python to 0.52.2.

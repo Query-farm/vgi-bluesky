@@ -73,7 +73,7 @@ shell, pin a tag so the worker can't change under you:
 
 ```sql
 ATTACH 'bluesky' (TYPE vgi,
-  LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-bluesky@v0.4.1 vgi-bluesky');
+  LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-bluesky@v0.4.2 vgi-bluesky');
 ```
 
 For local development from a clone, run the worker directly, or serve it over
