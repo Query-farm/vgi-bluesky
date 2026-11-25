@@ -9,7 +9,7 @@
 # test/mock_api/server.py -- so the SQL suite is offline and deterministic.
 # The live pytest tests stay opt-in (`uv run pytest -m live`).
 
-HAYBARN_VERSION  ?= 2.0.0rc11
+HAYBARN_VERSION  ?= 2.0.1rc3
 WORKER           := $(CURDIR)/ci/worker
 TOOLS            := $(CURDIR)/.tools
 HAYBARN_UNITTEST := $(TOOLS)/bin/haybarn-unittest

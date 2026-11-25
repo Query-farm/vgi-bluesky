@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 (2026-11-25)
+
+- Speaks VGI protocol 3.4: require vgi-python `>=0.55.2,<0.56`; uv.lock re-locked. This release
+  needs Haybarn 2.0.1 (or stock DuckDB 2.0 with `INSTALL vgi FROM query_farm`): Haybarn 2.0.0
+  loads a 3.3 `vgi` extension that cannot attach it.
+- SQL tests run on haybarn-unittest 2.0.1rc3 (CI and Makefile).
+- `serve` extra includes `vgi-python[http,oauth]` for Orchard hosted mode.
+
 ## 0.4.2 (2026-11-16)
 
 - Python 3.14: the floor, CI and tooling move to Python 3.14.

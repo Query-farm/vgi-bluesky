@@ -22,7 +22,7 @@ requires-python = ">=3.14"
 dependencies = [
     # The SDK needs its pinned DuckDB 1.5 filter evaluator inside the worker.
     # Native SQL tests use Haybarn 2.0 separately as the VGI 3.3 client.
-    "vgi-python[http,duckdb]>=0.52.2,<0.53",
+    "vgi-python[http,duckdb]>=0.55.2,<0.56",
     # DuckDB's filter evaluator needs numpy for some pushed-down predicates (e.g. the
     # Jetstream collection filter); vgi-python's duckdb extra doesn't pull it in.
     "numpy>=2.0",
@@ -33,7 +33,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-serve = ["vgi-python[http,duckdb,oauth]>=0.52.2,<0.53", "vgi-rpc[sentry]>=0.53.1"]
+serve = ["vgi-python[http,duckdb,oauth]>=0.55.2,<0.56", "vgi-rpc[sentry]>=0.53.1"]
 
 [dependency-groups]
 dev = [
@@ -45,7 +45,7 @@ dev = [
     # distribution the vgi extension is published for (and what vgi-lint uses);
     # stock `duckdb` wheels have no matching vgi build. It ships only release
     # candidates, so the specifier names one to let PEP 440 select them.
-    "haybarn>=2.0.0rc11,<2.1",
+    "haybarn>=2.0.1rc3,<2.1",
     # DuckDB materializes TIMESTAMP WITH TIME ZONE through pytz; without it a
     # scan that returns one fails at fetch time, not at bind.
     "pytz>=2026.5",

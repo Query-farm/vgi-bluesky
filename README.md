@@ -73,7 +73,7 @@ shell, pin a tag so the worker can't change under you:
 
 ```sql
 ATTACH 'bluesky' (TYPE vgi,
-  LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-bluesky@v0.4.2 vgi-bluesky');
+  LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-bluesky@v0.5.0 vgi-bluesky');
 ```
 
 For local development from a clone, run the worker directly, or serve it over
@@ -88,6 +88,8 @@ These commands start the worker, not an interactive SQL shell. To query it,
 use `uvx haybarn-cli`, load VGI, and `ATTACH` with the corresponding `LOCATION`.
 
 The package isn't published to PyPI; install it from this repository.
+
+vgi-bluesky 0.5.0 speaks VGI protocol 3.4, so it needs Haybarn 2.0.1 or newer (Haybarn 2.0.0 loads a 3.3 `vgi` extension that cannot attach it).
 
 ## Tables and functions
 
